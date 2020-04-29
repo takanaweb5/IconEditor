@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<customUI onLoad="onLoad" xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+<ribbon>
+<tabs>
+<tab id="tab1" label="アイコンエディタ">
+<group id="grp1" label="ファイル">
+ <button id="B11" getVisible="getVisible" onAction="onAction"
+  getLabel="getLabel" getShowLabel="getShowLabel"
+  getScreentip="getScreentip" getSupertip="getSupertip"
+  getShowImage="getShowImage" getImage="getImage" getSize="getSize"/>
+ <box id="box11" boxStyle="horizontal">
+  <button id="B12" getVisible="getVisible" onAction="onAction"
+   getLabel="getLabel" getShowLabel="getShowLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage" getSize="getSize"/>
+  <button id="B13" getVisible="getVisible" onAction="onAction"
+   getLabel="getLabel" getShowLabel="getShowLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage" getSize="getSize"/>
+ </box>
+ <box id="box12" boxStyle="horizontal">
+  <button id="B14" getVisible="getVisible" onAction="onAction"
+   getLabel="getLabel" getShowLabel="getShowLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage" getSize="getSize"/>
+  <button id="B15" getVisible="getVisible" onAction="onAction"
+   getLabel="getLabel" getShowLabel="getShowLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage" getSize="getSize"/>
+ </box>
+  <button id="B16" getVisible="getVisible" onAction="onAction"
+   getLabel="getLabel" getShowLabel="getShowLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage" getSize="getSize"/>
+</group>
+
+<group id="grp2" label="貼付け">
+  <button id="B21" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <checkBox id="C1" label="特定色のみ" supertip="特定の色だけを対象にして貼付けることができます"         getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
+  <checkBox id="C2" label="特定色以外" supertip="特定の色だけを対象外にして貼付けることができます"       getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
+  <checkBox id="C3" label="対象外透明" supertip="特定色を指定した場合に、対象以外のセルを透明色にします" getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
+  <separator id="SP21"/>
+  <button id="B22" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B23" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ <box id="box22" boxStyle="horizontal">
+  <button id="B24" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B25" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ </box>
+</group>
+
+<group id="grp3" label="編集">
+ <box id="box31" boxStyle="horizontal">
+  <button id="B31" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B32" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B33" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B34" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ </box>
+  <button id="B35" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B36" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+</group>
+
+<group id="grp6" label="選択">
+  <button id="B61" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B62" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B63" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+</group>
+
+<group id="grp7" label="色調整">
+ <box id="box71" boxStyle="horizontal">
+  <button id="B71" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B72" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ </box>
+ <box id="box72" boxStyle="horizontal">
+  <toggleButton id="C4" showLabel="false" label="赤" supertip="赤を対象とするかどうかのチェック" imageMso="ColorRed"   getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
+  <toggleButton id="C5" showLabel="false" label="緑" supertip="緑を対象とするかどうかのチェック" imageMso="ColorGreen" getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
+  <toggleButton id="C6" showLabel="false" label="青" supertip="青を対象とするかどうかのチェック" imageMso="ColorBlue"  getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
+ </box>
+  <checkBox id="C7" label="α値" screentip="アルファ値" supertip="アルファ値を対象とするかどうかのチェック" getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
+</group>
+
+<group id="grp4" label="サンプル表示">
+  <button id="B41" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B42" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B43" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B44" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B45" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B46" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+</group>
+
+<group id="grp5" label="ツール">
+  <button id="B51" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ <box id="box51" boxStyle="vertical">
+  <button id="B52" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B53" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ </box>
+ <box id="box52" boxStyle="vertical">
+  <button id="B54" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B55" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ </box>
+ <box id="box53" boxStyle="vertical">
+  <button id="B56" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B57" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+  <button id="B58" getVisible="getVisible" 
+   getLabel="getLabel" getScreentip="getScreentip" getSupertip="getSupertip"
+   getImage="getImage" getSize="getSize" onAction="onAction"/>
+ </box>
+</group>
+
+</tab>
+</tabs>
+</ribbon>
+</customUI>
