@@ -417,10 +417,6 @@ On Error GoTo Finalization
     Call GdipGetImageHeight(hGdiImage, FHeight)
     ReDim FPixels(1 To FWidth, 1 To FHeight)
     Call GetPixelsFromImage(hGdiImage)
-    
-    '幅・高さの最大値を設定する（パフォーマンスを確保するため）
-    If FWidth > MAX_WIDTH Then FWidth = MAX_WIDTH
-    If FHeight > MAX_HEIGHT Then FHeight = MAX_HEIGHT
 Finalization:
     If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
     If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
@@ -474,9 +470,6 @@ Public Sub Resize(ByVal lngWidth As Long, ByVal lngHeight As Long)
     Dim hNewBmp      As LongPtr
     
     If FWidth = lngWidth And FHeight = lngHeight Then
-        '幅・高さの最大値を設定する（パフォーマンスを確保するため）
-        If FWidth > MAX_WIDTH Then FWidth = MAX_WIDTH
-        If FHeight > MAX_HEIGHT Then FHeight = MAX_HEIGHT
         Exit Sub
     End If
 
@@ -518,10 +511,6 @@ On Error GoTo Finalization
     
     Call SetSize(lngWidth, lngHeight)
     Call GetPixelsFromImage(hNewBmp)
-    
-    '幅・高さの最大値を設定する（パフォーマンスを確保するため）
-    If FWidth > MAX_WIDTH Then FWidth = MAX_WIDTH
-    If FHeight > MAX_HEIGHT Then FHeight = MAX_HEIGHT
 Finalization:
     If hNewGraphics <> 0 Then Call GdipDeleteGraphics(hNewGraphics)
     If hNewBmp <> 0 Then Call GdipDisposeImage(hNewBmp)
@@ -548,6 +537,9 @@ Private Sub GetPixelsFromImage(ByVal hGdiImage As LongPtr)
         Call Err.Raise(513, "GdipBitmapLockBitsエラー")
     End If
     Call GdipBitmapUnlockBits(hGdiImage, BmpData)
+    
+    'αチャンネルがすべて初期値の時は、全てのPixelのα値を255に再設定する
+    Call SetNoAlpha
 End Sub
 
 '*****************************************************************************
@@ -715,15 +707,20 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Public Sub SetPixelsToRange(ByVal objRange As Range, Optional Mode As Long = 0, Optional objColorCell As Range = Nothing, Optional blnTransparent As Boolean = False)
+    Const MAXSIZE = 64
     Dim objCell As Range
     Dim Color  As TRGBQuad
     If Mode > 0 Then
         Color = CellToColor(objColorCell)
     End If
     
+    Dim lngWidth As Long
+    Dim lngHeight As Long
+    lngWidth = WorksheetFunction.Min(FWidth, MAXSIZE)
+    lngHeight = WorksheetFunction.Min(FHeight, MAXSIZE)
     Dim x As Long, y As Long
-    For x = 1 To FWidth
-        For y = 1 To FHeight
+    For x = 1 To lngWidth
+        For y = 1 To lngHeight
             Set objCell = objRange.Cells(y, x)
             Select Case Mode
             Case 0
@@ -737,6 +734,41 @@ Public Sub SetPixelsToRange(ByVal objRange As Range, Optional Mode As Long = 0, 
                     End If
                 End If
             End Select
+        Next
+    Next
+    
+    If FWidth <= MAXSIZE And FHeight <= MAXSIZE Then
+        Exit Sub
+    End If
+    
+    'サイズが大きすぎると時間がかかるので確認する
+    Application.ScreenUpdating = True
+    Dim strMsg As String
+    strMsg = "{MAX}Pixelを超えるイメージも表示しますか？" & vbCrLf & "元のサイズ：{幅} x {高さ} Pixel"
+    strMsg = Replace(strMsg, "{MAX}", MAXSIZE)
+    strMsg = Replace(strMsg, "{幅}", FWidth)
+    strMsg = Replace(strMsg, "{高さ}", FHeight)
+    If MsgBox(strMsg, vbYesNo) <> vbYes Then
+        Exit Sub
+    End If
+    Application.ScreenUpdating = False
+    For x = 1 To FWidth
+        For y = 1 To FHeight
+            If x > MAXSIZE Or y > MAXSIZE Then
+                Set objCell = objRange.Cells(y, x)
+                Select Case Mode
+                Case 0
+                    Call ColorToCell(objCell, FPixels(x, y))
+                Case 1, 2
+                    If SameColor(Color, FPixels(x, y)) = (Mode = 1) Then
+                        Call ColorToCell(objCell, FPixels(x, y))
+                    Else
+                        If blnTransparent Then
+                            Call ColorToCell(objCell, OleColorToARGB(&HFFFFFF, 0))
+                        End If
+                    End If
+                End Select
+            End If
         Next
     Next
 End Sub
@@ -904,6 +936,9 @@ On Error GoTo Finalization
     End With
     
     Call GetDIBits(hDC, hBitmap, 0, FHeight, FPixels(1, 1), BmpInfHeader, DIB_RGB_COLORS)
+    
+    'αチャンネルがすべて初期値の時は、全てのPixelのα値を255に再設定する
+    Call SetNoAlpha
 Finalization:
     If hDC <> 0 Then Call DeleteDC(hDC)
 End Sub
@@ -997,23 +1032,6 @@ Finalization:
 End Sub
 
 '*****************************************************************************
-'[概要] 1マスでもアルファチャンネルを使用しているか判定
-'[引数] なし
-'[戻値] True:アルファチャンネルあり
-'*****************************************************************************
-Private Function HasAlpha() As Boolean
-    Dim x As Long, y As Long
-    For x = 1 To FWidth
-        For y = 1 To FHeight
-            If FPixels(x, y).Alpha <> 0 Then
-                HasAlpha = True
-                Exit Function
-            End If
-        Next
-    Next
-End Function
-
-'*****************************************************************************
 '[概要] 対象座標(x,y)を塗潰し、一筆書きの次の座標を(x,y)に設定する
 '       一筆書きが行詰れば次の起点となる座標を(x,y)に設定する
 '[引数] x,y:座標、Pixels():塗潰し用の配列
@@ -1088,4 +1106,39 @@ End Function
 '    End If
 'End Sub
 
+'*****************************************************************************
+'[概要] アルファチャンネルを使用しているマスがない時、すべてのα値を255にする
+'       ※放置すると透明な画像となってしまうため
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Private Sub SetNoAlpha()
+    If HasAlpha Then
+        Exit Sub
+    End If
+    
+    Dim x As Long, y As Long
+    For x = 1 To FWidth
+        For y = 1 To FHeight
+            FPixels(x, y).Alpha = 255 '不透明
+        Next
+    Next
+End Sub
+
+'*****************************************************************************
+'[概要] 1マスでもアルファチャンネルを使用しているか判定
+'[引数] なし
+'[戻値] True:アルファチャンネルあり
+'*****************************************************************************
+Private Function HasAlpha() As Boolean
+    Dim x As Long, y As Long
+    For x = 1 To FWidth
+        For y = 1 To FHeight
+            If FPixels(x, y).Alpha <> 0 Then
+                HasAlpha = True
+                Exit Function
+            End If
+        Next
+    Next
+End Function
 

@@ -25,8 +25,8 @@ Public Enum ESelectionType
     E_Other
 End Enum
 
-Public Const MAX_WIDTH = 64
-Public Const MAX_HEIGHT = 64
+Public Const MAX_WIDTH = 256
+Public Const MAX_HEIGHT = 256
 
 '*****************************************************************************
 '[概要] 選択されているかオブジェクトの種類を判定する
@@ -268,6 +268,4 @@ Public Function ReSelectRange(ByRef objRange As Range) As Range
         Set ReSelectRange = UnionRange(ReSelectRange, objArrange(i))
     Next
 End Function
-
-
 

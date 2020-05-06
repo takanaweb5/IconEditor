@@ -51,8 +51,8 @@ Private Function GetCanvas(ByRef objSelection As Range) As Range
         End With
         '—Ìˆæ‚²‚Æ‚Ìˆê”Ô‰E‰º‚ÌƒZƒ‹
         With objArea.Cells(objArea.Cells.Count)
-            lngRow(2) = WorksheetFunction.Max(lngRow(2), .Row)
-            lngCol(2) = WorksheetFunction.Max(lngCol(2), .Column)
+            lngRow(2) = WorksheetFunction.MAX(lngRow(2), .Row)
+            lngCol(2) = WorksheetFunction.MAX(lngCol(2), .Column)
         End With
     Next
     

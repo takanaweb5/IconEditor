@@ -322,7 +322,7 @@ On Error GoTo ErrHandle
     Dim WidthAndHeight As Variant
     Dim strInput As String
     Do While True
-        strInput = InputBox("•,‚‚³‚ğ64Pixel–¢–‚Å“ü—Í‚µ‚Ä‚­‚¾‚³‚¢")
+        strInput = InputBox("•,‚‚³‚ğ" & MAX_WIDTH & "Pixel–¢–‚Å“ü—Í‚µ‚Ä‚­‚¾‚³‚¢")
         If strInput = "" Then
             Exit Do
         End If
@@ -331,7 +331,7 @@ On Error GoTo ErrHandle
             If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
                 lngWidth = WidthAndHeight(0)
                 lngHeight = WidthAndHeight(1)
-                If lngWidth <= 64 And lngHeight <= 64 Then
+                If lngWidth <= MAX_WIDTH And lngHeight <= MAX_HEIGHT Then
                     Exit Do
                 End If
             End If

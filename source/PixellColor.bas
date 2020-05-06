@@ -164,16 +164,16 @@ Public Function AdjustColor(ByRef SrcColor As TRGBQuad, ByVal lngUp As Long, ByV
             End If
         Else
             If blnRed Then
-                .Red = WorksheetFunction.Max(0, SrcColor.Red + lngUp)
+                .Red = WorksheetFunction.MAX(0, SrcColor.Red + lngUp)
             End If
             If blnGreen Then
-                .Green = WorksheetFunction.Max(0, SrcColor.Green + lngUp)
+                .Green = WorksheetFunction.MAX(0, SrcColor.Green + lngUp)
             End If
             If blnBlue Then
-                .Blue = WorksheetFunction.Max(0, SrcColor.Blue + lngUp)
+                .Blue = WorksheetFunction.MAX(0, SrcColor.Blue + lngUp)
             End If
             If blnAlpha Then
-                .Alpha = WorksheetFunction.Max(0, SrcColor.Alpha + lngUp)
+                .Alpha = WorksheetFunction.MAX(0, SrcColor.Alpha + lngUp)
             End If
         End If
     End With
