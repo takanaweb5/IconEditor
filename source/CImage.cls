@@ -179,7 +179,7 @@ Private Declare PtrSafe Function GdipDrawImageRectI Lib "gdiplus.dll" (ByVal GpG
 Private Declare PtrSafe Function GdipSetInterpolationMode Lib "gdiplus" (ByVal graphics As LongPtr, ByVal nInterpolationMode As Long) As Long
 Private Declare PtrSafe Function GdipCreateBitmapFromGraphics Lib "gdiplus" (ByVal Width As Long, ByVal Height As Long, ByVal Target As LongPtr, bitmap As LongPtr) As Long
 Private Declare PtrSafe Function GdipSetPixelOffsetMode Lib "gdiplus" (ByVal graphics As LongPtr, ByVal PixOffsetMode As Long) As Long
-Private Declare PtrSafe Function GdipBitmapLockBits Lib "gdiplus" (ByVal bitmap As LongPtr, ByRef RECT As RECT, ByVal flags As Long, ByVal PixelFormat As Long, ByRef lockedBitmapData As Any) As Long
+Private Declare PtrSafe Function GdipBitmapLockBits Lib "gdiplus" (ByVal bitmap As LongPtr, ByRef RECT As Any, ByVal flags As Long, ByVal PixelFormat As Long, ByRef lockedBitmapData As Any) As Long
 Private Declare PtrSafe Function GdipBitmapUnlockBits Lib "gdiplus" (ByVal bitmap As LongPtr, ByRef lockedBitmapData As Any) As Long
 Private Declare PtrSafe Function GdipCreateFromHDC Lib "gdiplus" (ByVal hDC As LongPtr, ByRef graphics As LongPtr) As Long
 
@@ -535,16 +535,7 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Private Sub GetPixelsFromImage(ByVal hGdiImage As LongPtr)
-    Dim uRect As RECT
     Dim BmpData As BITMAPDATA
-    
-    With uRect
-        .x = 0
-        .y = 0
-        .Width = FWidth
-        .Height = FHeight
-    End With
-    
     With BmpData
         .Width = FWidth
         .Height = FHeight
@@ -553,7 +544,7 @@ Private Sub GetPixelsFromImage(ByVal hGdiImage As LongPtr)
         .stride = FWidth * 4
     End With
     
-    If GdipBitmapLockBits(hGdiImage, uRect, ImageLockModeUserInputBuf Or ImageLockModeRead, PixelFormat32bppARGB, BmpData) <> S_OK Then
+    If GdipBitmapLockBits(hGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeRead, PixelFormat32bppARGB, BmpData) <> S_OK Then
         Call Err.Raise(513, "GdipBitmapLockBitsエラー")
     End If
     Call GdipBitmapUnlockBits(hGdiImage, BmpData)
@@ -565,35 +556,27 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Private Sub SetPixelsToBitmap(ByRef hGdiImage As LongPtr)
-    Dim x As Long, y As Long
-    For x = 1 To FWidth
-        For y = 1 To FHeight
-            Call GdipBitmapSetPixel(hGdiImage, x - 1, y - 1, CastARGB(FPixels(x, y)))
-        Next
-    Next
-End Sub
+    Dim BmpData As BITMAPDATA
+    With BmpData
+        .Width = FWidth
+        .Height = FHeight
+        .PixelFormat = PixelFormat32bppARGB
+        .scan0 = VarPtr(FPixels(1, 1))
+        .stride = FWidth * 4
+    End With
+    
+    If GdipBitmapLockBits(hGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeWrite, PixelFormat32bppARGB, BmpData) <> S_OK Then
+        Call Err.Raise(513, "GdipBitmapLockBitsエラー")
+    End If
+    Call GdipBitmapUnlockBits(hGdiImage, BmpData)
 
-'*****************************************************************************
-'※アルファチャネルが反映されないため却下
-'*****************************************************************************
-'Private Sub SetPixelsToBitmap(ByRef hGdiImage As LongPtr)
-'On Error GoTo Finalization
-'    Dim BmpInfHeader  As BITMAPINFOHEADER
-'
-'    With BmpInfHeader
-'        .size = Len(BmpInfHeader)
-'        .Width = FWidth
-'        .Height = -FHeight 'ボトムアップからトップダウンに変更
-'        .Planes = 1 '常に1
-'        .BitCount = 32 'Bit
-'        .Compression = 0 'BI_RGB(無圧縮)
-'        .SizeImage = 0 '省略可
-'    End With
-'
-'    'アルファチャネルは反映されない
-'    Call GdipCreateBitmapFromGdiDib(BmpInfHeader, FPixels(1, 1), hGdiImage)
-'Finalization:
-'End Sub
+'    Dim x As Long, y As Long
+'    For x = 1 To FWidth
+'        For y = 1 To FHeight
+'            Call GdipBitmapSetPixel(hGdiImage, x - 1, y - 1, CastARGB(FPixels(x, y)))
+'        Next
+'    Next
+End Sub
 
 '*****************************************************************************
 '[概要] BMP形式の画像をクリップボードから読込む
