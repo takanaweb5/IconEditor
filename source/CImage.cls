@@ -451,7 +451,7 @@ On Error GoTo Finalization
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
-    Call SetPixelsToBitmap(hGdiImage)
+    Call SetPixelsToImage(hGdiImage)
     Call GdipBitmapSetResolution(hGdiImage, 96#, 96#) '標準のDPIに設定
     If GdipSaveImageToFile(hGdiImage, ByVal StrPtr(strFile), GetCLSID(strGuid), 0) <> S_OK Then
         Call Err.Raise(513, "GdipSaveImageToFileエラー")
@@ -485,7 +485,7 @@ On Error GoTo Finalization
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hOldBmp) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
-    Call SetPixelsToBitmap(hOldBmp)
+    Call SetPixelsToImage(hOldBmp)
     
 '    Dim hSrcBitmap As LongPtr
 '    Call GdipCreateHBITMAPFromBitmap(hOldBmp, hSrcBitmap, 0)
@@ -551,11 +551,11 @@ Private Sub GetPixelsFromImage(ByVal hGdiImage As LongPtr)
 End Sub
 
 '*****************************************************************************
-'[概要] Bitmapオブジェクトに画像を設定 ※アルファチャネルあり
+'[概要] FPixels()からBitmapオブジェクトを設定 ※アルファチャネルあり
 '[引数] Bitmapオブジェクト
 '[戻値] なし
 '*****************************************************************************
-Private Sub SetPixelsToBitmap(ByRef hGdiImage As LongPtr)
+Private Sub SetPixelsToImage(ByRef hGdiImage As LongPtr)
     Dim BmpData As BITMAPDATA
     With BmpData
         .Width = FWidth
@@ -654,7 +654,7 @@ On Error GoTo ErrHandle
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
-    Call SetPixelsToBitmap(hGdiImage)
+    Call SetPixelsToImage(hGdiImage)
     Call GdipBitmapSetResolution(hGdiImage, 96#, 96#) '標準のDPIに設定
     If GdipSaveImageToStream(hGdiImage, ByVal ObjPtr(Stream), GetCLSID(CLSID_PNG), 0) <> S_OK Then
         Call Err.Raise(513, "GdipSaveImageToStreamエラー")
@@ -684,7 +684,7 @@ On Error GoTo Finalization
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then
         Exit Function
     End If
-    Call SetPixelsToBitmap(hGdiImage)
+    Call SetPixelsToImage(hGdiImage)
     If GdipCreateHBITMAPFromBitmap(hGdiImage, hBitmap, 0) <> S_OK Then GoTo Finalization
     If SetClipboardData(CF_BITMAP, hBitmap) = 0 Then GoTo Finalization
     
@@ -940,7 +940,7 @@ On Error GoTo Finalization
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then
         Exit Function
     End If
-    Call SetPixelsToBitmap(hGdiImage)
+    Call SetPixelsToImage(hGdiImage)
     If GdipCreateHBITMAPFromBitmap(hGdiImage, hBitmap, 0) <> S_OK Then GoTo Finalization
 
     With uPicInfo
