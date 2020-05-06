@@ -669,21 +669,19 @@ End Sub
 '[à¯êî] Ç»Çµ
 '[ñﬂíl] Ç»Çµ
 '*****************************************************************************
-Private Function SaveBMPToClipbord()
+Private Sub SaveBMPToClipbord()
 On Error GoTo Finalization
     Dim hGdiImage As LongPtr
     Dim hBitmap As LongPtr
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then
-        Exit Function
+        Exit Sub
     End If
     Call SetPixelsToImage(hGdiImage)
     If GdipCreateHBITMAPFromBitmap(hGdiImage, hBitmap, 0) <> S_OK Then GoTo Finalization
     If SetClipboardData(CF_BITMAP, hBitmap) = 0 Then GoTo Finalization
-    
-    SaveBMPToClipbord = True
 Finalization:
     If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
-End Function
+End Sub
 
 '*****************************************************************************
 '[äTóv] CellÇÃêFÇ©ÇÁFPixelsÇê›íË
