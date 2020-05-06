@@ -1,12 +1,74 @@
 Attribute VB_Name = "Ribbon"
 Option Explicit
 
-Private FRibbon As IRibbonUI
+Private Const PAGE_READONLY = 2&
+Private Const PAGE_READWRITE = 4&
+Private Const FILE_MAP_WRITE = 2&
+Private Const FILE_MAP_READ = 4&
+
+Private Declare PtrSafe Function CreateFileMapping Lib "kernel32" Alias "CreateFileMappingW" (ByVal hFile As LongPtr, lpFileMappingAttributes As Any, ByVal flProtect As Long, ByVal dwMaximumSizeHigh As Long, ByVal dwMaximumSizeLow As Long, ByVal lpName As String) As LongPtr
+Private Declare PtrSafe Function OpenFileMapping Lib "kernel32" Alias "OpenFileMappingW" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal ptrToNameString As String) As LongPtr
+Private Declare PtrSafe Function CloseHandle Lib "kernel32" (ByVal hObject As LongPtr) As Long
+Private Declare PtrSafe Function MapViewOfFile Lib "kernel32" (ByVal hFileMappingObject As LongPtr, ByVal dwDesiredAccess As Long, ByVal dwFileOffsetHigh As Long, ByVal dwFileOffsetLow As Long, ByVal dwNumberOfBytesToMap As Long) As LongPtr
+Private Declare PtrSafe Function UnmapViewOfFile Lib "kernel32" (ByVal lpBaseAddress As LongPtr) As Long
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As LongPtr)
+
+'Private FRibbon As IRibbonUI '例外等が起きても値が損なわれないように共有メモリに変更
 Public FChecked(1 To 7) As Boolean
 Private FSampleClick As Boolean
 
-Sub onLoad(ribbon As IRibbonUI)
-    Set FRibbon = ribbon
+'*****************************************************************************
+'[概要] IRibbonUIを共有メモリに保存する
+'[引数] IRibbonUI
+'[戻値] なし
+'*****************************************************************************
+Private Sub SetRibbonUI(ByRef Ribbon As IRibbonUI)
+    Dim hFileMap As LongPtr
+    Dim pMap     As LongPtr
+    Dim Pointer  As LongPtr
+    
+    'ハンドルをCloseすることはあきらめる
+    hFileMap = CreateFileMapping(-1, ByVal 0&, PAGE_READWRITE, 0, Len(Pointer), ThisWorkbook.FullName)
+'    hFileMap = OpenFileMapping(FILE_MAP_WRITE, False, ThisWorkbook.FullName)
+    If hFileMap <> 0 Then
+        pMap = MapViewOfFile(hFileMap, FILE_MAP_WRITE, 0, 0, 0)
+        If pMap <> 0 Then
+            Pointer = ObjPtr(Ribbon)
+            Call CopyMemory(ByVal pMap, Pointer, Len(Pointer))
+            Call UnmapViewOfFile(pMap)
+        End If
+    End If
+End Sub
+
+'*****************************************************************************
+'[概要] IRibbonUIを共有メモリから取得する
+'[引数] なし
+'[戻値] IRibbonUI
+'*****************************************************************************
+Private Function GetRibbonUI() As IRibbonUI
+    Dim hFileMap As LongPtr
+    Dim pMap     As LongPtr
+    Dim Pointer  As LongPtr
+    
+    hFileMap = OpenFileMapping(FILE_MAP_READ, False, ThisWorkbook.FullName)
+    If hFileMap <> 0 Then
+        pMap = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 0)
+        If pMap <> 0 Then
+            Call CopyMemory(Pointer, ByVal pMap, Len(Pointer))
+            Call UnmapViewOfFile(pMap)
+            
+            Dim obj As Object
+            Call CopyMemory(obj, Pointer, Len(Pointer))
+            Set GetRibbonUI = obj
+        End If
+        Call CloseHandle(hFileMap)
+    End If
+End Function
+
+Sub onLoad(Ribbon As IRibbonUI)
+    'リボンUIを共有メモリに保存する
+    '(モジュール変数に保存した場合は、例外やコードのBreakで値が損なわれるため)
+    Call SetRibbonUI(Ribbon)
 End Sub
 
 Sub loadImage(imageID As String, ByRef returnedVal)
@@ -339,11 +401,11 @@ Sub onAction(control As IRibbonControl)
     Case 12
         Call 画像読込
     Case 13
-        Call FRibbon.Invalidate
+        Call GetRibbonUI.Invalidate
     Case 14
         Call 画像保存
     Case 15
-        Call FRibbon.Invalidate
+        Call GetRibbonUI.Invalidate
     Case 16
         Call Clipbord画像保存
     Case 21
@@ -382,7 +444,7 @@ Sub onAction(control As IRibbonControl)
         If CheckSelection <> E_Range Then Exit Sub
         Call Clipbord画像設定
         FSampleClick = True
-        Call FRibbon.InvalidateControl(control.ID)
+        Call GetRibbonUI.InvalidateControl(control.ID)
     Case 51
         Call 透明色強調
     End Select
@@ -399,19 +461,19 @@ Sub onCheckAction(control As IRibbonControl, pressed As Boolean)
 '        Application.EnableEvents = False
         '特定色・特定色以外のトグル
         FChecked(2) = False
-        Call FRibbon.InvalidateControl("C2")
+        Call GetRibbonUI.InvalidateControl("C2")
         
         '有効無効を切り替る
-        Call FRibbon.InvalidateControl("C3")
+        Call GetRibbonUI.InvalidateControl("C3")
 '        Application.EnableEvents = True
     Case 2
 '        Application.EnableEvents = False
         '特定色・特定色以外のトグル
         FChecked(1) = False
-        Call FRibbon.InvalidateControl("C1")
+        Call GetRibbonUI.InvalidateControl("C1")
         
         '有効無効を切り替る
-        Call FRibbon.InvalidateControl("C3")
+        Call GetRibbonUI.InvalidateControl("C3")
 '        Application.EnableEvents = True
     End Select
 End Sub

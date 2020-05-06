@@ -5,7 +5,7 @@ END
 Attribute VB_Name = "CImage"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = False
+Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
@@ -16,29 +16,29 @@ Private Type GdiplusStartupInput
     SuppressExternalCodecs As Long
 End Type
 
-Private Enum GpStatus
-   Ok = 0
-   GenericError = 1
-   InvalidParameter = 2
-   OutOfMemory = 3
-   ObjectBusy = 4
-   InsufficientBuffer = 5
-   NotImplemented = 6
-   Win32Error = 7
-   WrongState = 8
-   Aborted = 9
-   FileNotFound = 10
-   ValueOverflow = 11
-   AccessDenied = 12
-   UnknownImageFormat = 13
-   FontFamilyNotFound = 14
-   FontStyleNotFound = 15
-   NotTrueTypeFont = 16
-   UnsupportedGdiplusVersion = 17
-   GdiplusNotInitialized = 18
-   PropertyNotFound = 19
-   PropertyNotSupported = 20
-End Enum
+'Private Enum GpStatus
+'   Ok = 0
+'   GenericError = 1
+'   InvalidParameter = 2
+'   OutOfMemory = 3
+'   ObjectBusy = 4
+'   InsufficientBuffer = 5
+'   NotImplemented = 6
+'   Win32Error = 7
+'   WrongState = 8
+'   Aborted = 9
+'   FileNotFound = 10
+'   ValueOverflow = 11
+'   AccessDenied = 12
+'   UnknownImageFormat = 13
+'   FontFamilyNotFound = 14
+'   FontStyleNotFound = 15
+'   NotTrueTypeFont = 16
+'   UnsupportedGdiplusVersion = 17
+'   GdiplusNotInitialized = 18
+'   PropertyNotFound = 19
+'   PropertyNotSupported = 20
+'End Enum
 
 Private Type Guid
     Data1 As Long
@@ -48,13 +48,13 @@ Private Type Guid
 End Type
 
 Private Type PICTDESC_ICON
-    Size   As Long
+    size   As Long
     Type   As Long
     hIcon  As LongPtr
 End Type
 
 Private Type PICTDESC_BMP
-    Size    As Long
+    size    As Long
     Type    As Long
     hBitmap As LongPtr
     hPal    As LongPtr
@@ -78,14 +78,14 @@ End Type
 
 Private Type BITMAPFILEHEADER
     Type      As Integer
-    Size      As Long
+    size      As Long
     Reserved1 As Integer
     Reserved2 As Integer
     OffBits   As Long
 End Type
 
 Private Type BITMAPINFOHEADER
-    Size          As Long
+    size          As Long
     Width         As Long
     Height        As Long
     Planes        As Integer
@@ -101,16 +101,6 @@ End Type
 Private Type BITMAPINFO
     Header As BITMAPINFOHEADER
     Colors(1 To 256) As Long
-End Type
-
-Private Type TBITMAP
-    Type As Long
-    Width As Long
-    Height As Long
-    WidthBytes As Long
-    Planes As Integer
-    BitsPixel As Integer
-    Bits As LongPtr
 End Type
 
 Private Type BITMAPDATA
@@ -129,25 +119,6 @@ Private Type RECT
     Height As Long
 End Type
 
-Private Type TRGBQuad
-    Blue    As Byte
-    Green   As Byte
-    Red     As Byte
-    Alpha   As Byte
-End Type
-
-Private Type TOLE_COLOR
-    Long   As Long
-End Type
-
-Private Type TRGB
-    Red     As Byte
-    Green   As Byte
-    Blue    As Byte
-    None    As Byte
-End Type
-
-
 Private Declare PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare PtrSafe Function DeleteDC Lib "gdi32" (ByVal hDC As LongPtr) As Long
@@ -162,10 +133,8 @@ Private Declare PtrSafe Function StretchDIBits Lib "gdi32" (ByVal hDC As LongPtr
 Private Declare PtrSafe Function StretchBlt Lib "gdi32" (ByVal hDC As LongPtr, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As LongPtr, ByVal xSrc As Long, ByVal ySrc As Long, ByVal nSrcWidth As Long, ByVal nSrcHeight As Long, ByVal dwRop As Long) As Long
 Private Declare PtrSafe Function SetStretchBltMode Lib "gdi32" (ByVal hDC As LongPtr, ByVal nStretchMode As Long) As Long
 Private Declare PtrSafe Function SetBrushOrgEx Lib "gdi32" (ByVal hDC As LongPtr, ByVal nXOrg As Long, ByVal nYOrg As Long, lppt As Any) As Long
-
 Private Declare PtrSafe Function BitBlt Lib "gdi32" (ByVal hDestDC As LongPtr, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As LongPtr, ByVal xSrc As Long, ByVal ySrc As Long, ByVal dwRop As Long) As Long
 Private Declare PtrSafe Function SetBkColor Lib "gdi32" (ByVal hDC As LongPtr, ByVal crColor As Long) As Long
-
 Private Declare PtrSafe Function GetObject Lib "gdi32" Alias "GetObjectA" (ByVal hObject As LongPtr, ByVal nCount As Long, lpObject As Any) As Long
 Private Declare PtrSafe Function GetBitmapBits Lib "gdi32" (ByVal hBitmap As LongPtr, ByVal dwCount As Long, lpBits As Any) As Long
 Private Declare PtrSafe Function SetBitmapBits Lib "gdi32" (ByVal hBitmap As LongPtr, ByVal dwCount As Long, lpBits As Any) As Long
@@ -227,7 +196,6 @@ Private Declare PtrSafe Function GlobalSize Lib "kernel32" (ByVal hMem As LongPt
 Private Declare PtrSafe Function GlobalLock Lib "kernel32" (ByVal hMem As LongPtr) As LongPtr
 Private Declare PtrSafe Function GlobalUnlock Lib "kernel32" (ByVal hMem As LongPtr) As Long
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As LongPtr)
-
 Private Declare PtrSafe Function CreateFile Lib "kernel32" Alias "CreateFileA" (ByVal lpFileName As String, ByVal dwDesiredAccess As Long, ByVal dwShareMode As Long, ByVal lpSecurityAttributes As LongPtr, ByVal dwCreationDisposition As Long, ByVal dwFlagsAndAttributes As Long, ByVal hTemplateFile As LongPtr) As LongPtr
 Private Declare PtrSafe Function CloseHandle Lib "kernel32" (ByVal hObject As LongPtr) As Long
 Private Declare PtrSafe Function ReadFile Lib "kernel32" (ByVal hFile As LongPtr, ByRef Buffer As Any, ByVal nNumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As LongPtr) As Long
@@ -311,188 +279,26 @@ Private FWidth As Long
 Private FHeight As Long
 Private FGdiPlus As LongPtr
 
-Private Const MAX_WIDTH = 64
-Private Const MAX_HEIGHT = 64
-
 '*****************************************************************************
 '[概要] コンストラクタ
 '*****************************************************************************
-Private Sub Class_Initialize()
-    Dim GdiInput As GdiplusStartupInput
-    GdiInput.GdiplusVersion = 1&
-    If GdiplusStartup(FGdiPlus, GdiInput) <> S_OK Then
-        Call Err.Raise(513, "GdiplusStartupエラー")
-    End If
-End Sub
+'Private Sub Class_Initialize()
+'    Dim GdiInput As GdiplusStartupInput
+'    GdiInput.GdiplusVersion = 1&
+'    If GdiplusStartup(FGdiPlus, GdiInput) <> S_OK Then
+'        Call Err.Raise(513, "GdiplusStartupエラー")
+'    End If
+'
+'    Call MsgBox("Class_Initialize")
+'End Sub
 
 '*****************************************************************************
 '[概要] デストラクタ
 '*****************************************************************************
-Private Sub Class_Terminate()
-    If FGdiPlus <> 0 Then Call GdiplusShutdown(FGdiPlus)
-End Sub
-
-'*****************************************************************************
-'[概要] Cellの色を取得する
-'[引数] 対象のセル
-'[戻値] TRGBQuad
-'*****************************************************************************
-Private Function CellToColor(ByRef objCell As Range) As TRGBQuad
-    Dim strNumeric As String
-    Dim Alpha As Byte
-    With objCell.Interior
-        If .ColorIndex = xlColorIndexAutomatic Or .ColorIndex = xlColorIndexNone Then
-            '透明
-            CellToColor = OleColorToARGB(&HFFFFFF, 0)
-        Else
-            Alpha = &HFF '不透明
-            '半透明
-            If .Pattern = xlGray8 Then
-                strNumeric = Replace(objCell.Value, "$", "&H", 1, 1)
-                If IsNumeric(strNumeric) Then
-                    If 0 <= CInt(strNumeric) And CInt(strNumeric) <= 256 Then
-                        'セルに入力された数値がアルファ値
-                        Alpha = CInt(strNumeric)
-                    End If
-                End If
-            End If
-            CellToColor = OleColorToARGB(.Color, Alpha)
-        End If
-    End With
-End Function
-
-'*****************************************************************************
-'[概要] Cellの色を取得する
-'[引数] 対象のセル
-'[戻値] TRGBQuad
-'*****************************************************************************
-Public Function CellToColor2(ByRef objCell As Range) As Long
-    CellToColor2 = ARGBToLong(CellToColor(objCell))
-End Function
-
-'*****************************************************************************
-'[概要] Cellの色を設定する
-'[引数] 対象のセル，設定する色
-'[戻値] TRGBQuad
-'*****************************************************************************
-Private Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad)
-    With objCell.Interior
-        Select Case Color.Alpha
-        Case 0   '透明
-            .Pattern = xlGray8
-            .PatternColorIndex = xlAutomatic
-            .TintAndShade = 0
-            .PatternTintAndShade = 0
-            .ColorIndex = xlAutomatic
-            objCell.Value = ""
-        Case 255 '不透明
-            .Pattern = xlSolid
-            .PatternColorIndex = xlAutomatic
-            .TintAndShade = 0
-            .PatternTintAndShade = 0
-            .Color = ARGBToRGB(Color)
-            objCell.Value = ""
-        Case Else '半透明
-            .Pattern = xlGray8
-            .PatternColor = &HFFFFFF
-            .ColorIndex = xlAutomatic
-            .TintAndShade = 0
-            .PatternTintAndShade = 0
-            .Color = ARGBToRGB(Color)
-            With objCell
-                .Value = Color.Alpha
-                .Font.Color = ARGBToRGB(Color) '文字を背景色と同じにする
-            End With
-        End Select
-    End With
-End Sub
-
-'*****************************************************************************
-'[概要] TRGBQuad型をOLE_COLORに変換する
-'[引数] TRGBQuad
-'[戻値] OLE_COLOR
-'*****************************************************************************
-Private Function ARGBToRGB(ByRef ARGB As TRGBQuad) As OLE_COLOR
-    Dim Color As TOLE_COLOR
-    Dim RGB As TRGB
-    With RGB
-        .Red = ARGB.Red
-        .Green = ARGB.Green
-        .Blue = ARGB.Blue
-    End With
-    LSet Color = RGB
-    ARGBToRGB = Color.Long
-End Function
-
-'*****************************************************************************
-'[概要] TRGBQuad型をLongに変換する
-'[引数] TRGBQuad
-'[戻値] OLE_COLOR
-'*****************************************************************************
-Private Function ARGBToLong(ByRef ARGB As TRGBQuad) As Long
-    Dim Color As TOLE_COLOR
-    LSet Color = ARGB
-    ARGBToLong = Color.Long
-End Function
-
-'*****************************************************************************
-'[概要] TRGBQuad型をLongに変換する
-'[引数] TRGBQuad
-'[戻値] OLE_COLOR
-'*****************************************************************************
-Private Function LongToARGB(ByVal Value As Long) As TRGBQuad
-    Dim Color As TOLE_COLOR
-    Color.Long = Value
-    LSet LongToARGB = Color
-End Function
-
-'*****************************************************************************
-'[概要] OLE_COLORをTRGBQuad型に変換する
-'[引数] OLE_COLOR，アルファ値(省略時は透過なし)
-'[戻値] TRGBQuad
-'*****************************************************************************
-Private Function OleColorToARGB(ByVal lngColor As OLE_COLOR, Optional Alpha As Byte = 255) As TRGBQuad
-    Dim RGB As TRGB
-    Dim Color As TOLE_COLOR
-    Color.Long = lngColor
-    LSet RGB = Color
-    With RGB
-        OleColorToARGB = RGBToARGB(.Red, .Green, .Blue, Alpha)
-    End With
-End Function
-
-'*****************************************************************************
-'[概要] RGB & アルファ値をTRGBQuad型に変換する
-'[引数] RGB，アルファ値(省略時は透過なし)
-'[戻値] TRGBQuad
-'*****************************************************************************
-Private Function RGBToARGB(ByVal Red As Byte, ByVal Green As Byte, ByVal Blue As Byte, Optional Alpha As Byte = 255) As TRGBQuad
-    With RGBToARGB
-        .Red = Red
-        .Green = Green
-        .Blue = Blue
-        .Alpha = Alpha
-    End With
-End Function
-
-'*****************************************************************************
-'[概要] 指定色(-1は透明とする)とRGBQuad色が同一かどうか判定する
-'[引数] 指定色(-1は透明とする)，RGBQuad
-'[戻値] True:同一
-'*****************************************************************************
-Private Function SameColor(ByVal lngColor As Long, RGBQuad As TRGBQuad) As Boolean
-    If lngColor = -1 Then
-        SameColor = (RGBQuad.Alpha = 0)
-    ElseIf RGBQuad.Alpha = 0 Then
-        SameColor = False
-    Else
-        With OleColorToARGB(lngColor)
-            SameColor = (.Red = RGBQuad.Red) And _
-                        (.Green = RGBQuad.Green) And _
-                        (.Blue = RGBQuad.Blue)
-        End With
-    End If
-End Function
+'Private Sub Class_Terminate()
+'    If FGdiPlus <> 0 Then Call GdiplusShutdown(FGdiPlus)
+'    Call MsgBox("Class_Terminate")
+'End Sub
 
 '*****************************************************************************
 '[概要] 画像の幅と高さを設定
@@ -525,7 +331,7 @@ End Property
 '[引数] なし
 '[戻値] なし
 '*****************************************************************************
-Public Sub Transpose()
+Private Sub Transpose()
     ReDim Work(1 To FHeight, 1 To FWidth) As TRGBQuad
     Dim x As Long, y As Long
     For x = 1 To FHeight
@@ -600,14 +406,17 @@ End Function
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-Private Sub LoadImageFromFile(ByVal strFile As String)
+Public Sub LoadImageFromFile(ByVal strFile As String)
 On Error GoTo Finalization
     Dim hGdiImage As LongPtr
     If GdipLoadImageFromFile(ByVal StrPtr(strFile), hGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipLoadImageFromFileエラー")
     End If
     Call GdipBitmapSetResolution(hGdiImage, 96#, 96#) '標準のDPIに設定
-    Call GetPixelsFromBitmap(hGdiImage)
+    Call GdipGetImageWidth(hGdiImage, FWidth)
+    Call GdipGetImageHeight(hGdiImage, FHeight)
+    ReDim FPixels(1 To FWidth, 1 To FHeight)
+    Call GetPixelsFromImage(hGdiImage)
     
     '幅・高さの最大値を設定する（パフォーマンスを確保するため）
     If FWidth > MAX_WIDTH Then FWidth = MAX_WIDTH
@@ -622,17 +431,16 @@ End Sub
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-Public Function SaveImageToFile(ByVal strFile As String) As Boolean
+Public Sub SaveImageToFile(ByVal strFile As String)
 On Error GoTo Finalization
     Dim strGuid As String
-
     Select Case GetFileExtension(strFile)
     Case "ICO"
-        SaveImageToFile = SaveToIcon(strFile) 'アルファチェネルの設定あり
-        Exit Function
+        Call SaveToIcon(strFile) 'アルファチェネルの設定あり
+        Exit Sub
     Case "BMP"
-        SaveImageToFile = SaveToBmp(strFile) 'アルファチェネルの設定あり
-        Exit Function
+        Call SaveToBmp(strFile) 'アルファチェネルの設定あり
+        Exit Sub
     Case "PNG"
         strGuid = CLSID_PNG
     Case Else
@@ -649,41 +457,10 @@ On Error GoTo Finalization
         Call Err.Raise(513, "GdipSaveImageToFileエラー")
     End If
     Call GdipDisposeImage(hGdiImage)
-    SaveImageToFile = True
-    Exit Function
+    Exit Sub
 Finalization:
     If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
     If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
-End Function
-
-'*****************************************************************************
-'[概要] Bitmapハンドルから画像を取込む
-'       ※アルファチャネルが反映されないため却下
-'[引数] Bitmapハンドル
-'[戻値] なし
-'*****************************************************************************
-'Public Sub GetPixelsFromHBITMAP(ByVal hBitmap As LongPtr)
-'On Error GoTo Finalization
-'    Dim hGdiImage As LongPtr
-'    If GdipCreateBitmapFromHBITMAP(hBitmap, 0&, hGdiImage) <> S_OK Then
-'        Call Err.Raise(513, "GdipCreateBitmapFromHBITMAPエラー")
-'    End If
-'    Call GetPixelsFromBitmap(hGdiImage)
-'Finalization:
-'    If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
-'    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
-'End Sub
-
-'*****************************************************************************
-'[概要] Bitmapオブジェクトから画像を取込む
-'[引数] Bitmapオブジェクト,縮小する幅と高さ
-'[戻値] なし
-'*****************************************************************************
-Private Sub GetPixelsFromBitmap(ByVal hGdiImage As LongPtr)
-    Call GdipGetImageWidth(hGdiImage, FWidth)
-    Call GdipGetImageHeight(hGdiImage, FHeight)
-    ReDim FPixels(1 To FWidth, 1 To FHeight)
-    Call GetPixelsFromImage(hGdiImage)
 End Sub
 
 '*****************************************************************************
@@ -703,43 +480,35 @@ Public Sub Resize(ByVal lngWidth As Long, ByVal lngHeight As Long)
         Exit Sub
     End If
 
-'    Dim hSrcDC As LongPtr
-'    Dim hDstDc As LongPtr
-'    Dim hSrcBitmap As LongPtr
-'    Dim hDstBitmap As LongPtr
-'    hSrcDC = CreateCompatibleDC(0)
-'    If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hOldBmp) <> S_OK Then
-'        Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
-'    End If
-'    Call SetPixelsToBitmap(hOldBmp)
-'    Call GdipCreateHBITMAPFromBitmap(hOldBmp, hSrcBitmap, 0)
-'    hSrcDC = CreateCompatibleDC(0)
-'    Call SelectObject(hSrcDC, hSrcBitmap)
-'
-'    hDstBitmap = CreateBitmap(lngWidth, lngHeight, 1, 32, ByVal 0&)
-'    hDstDc = CreateCompatibleDC(0)
-'    Call SelectObject(hDstDc, hDstBitmap)
-''    Call SetBrushOrgEx(hDstDc, 0, 0, ByVal 0)
-''    Call SetStretchBltMode(hDstDc, HALFTONE)
-'    Call StretchBlt(hDstDc, 0, 0, lngWidth, lngHeight, hSrcDC, 0, 0, FWidth, FHeight, SRCCOPY)
-'    Call SetSize(lngWidth, lngHeight)
-'    Call GetPixelsFromHBITMAP(hDstBitmap)
-'    Exit Sub
-    
-'    Dim hDC As LongPtr
-'    hDC = CreateCompatibleDC(0)
-'    Call GdipCreateFromHDC(hDC, hGraphics)
-'    Call DeleteDC(hDC)
-    
 On Error GoTo Finalization
+    '元のサイズのBitmapオブジェクトを作成
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hOldBmp) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
     Call SetPixelsToBitmap(hOldBmp)
     
+'    Dim hSrcBitmap As LongPtr
+'    Call GdipCreateHBITMAPFromBitmap(hOldBmp, hSrcBitmap, 0)
+'    Dim hSrcDC As LongPtr
+'    hSrcDC = CreateCompatibleDC(0)
+'    Call SelectObject(hSrcDC, hSrcBitmap)
+'
+'    Dim hDstBitmap As LongPtr
+'    hDstBitmap = CreateBitmap(lngWidth, lngHeight, 1, 32, ByVal 0&)
+'    Dim hDstDc As LongPtr
+'    hDstDc = CreateCompatibleDC(0)
+'    Call SelectObject(hDstDc, hDstBitmap)
+'
+'    Call StretchBlt(hDstDc, 0, 0, lngWidth, lngHeight, hSrcDC, 0, 0, FWidth, FHeight, SRCCOPY)
+'    Call SetSize(lngWidth, lngHeight)
+'    Call GetPixelsFromHBITMAP(hDstBitmap)
+    
+    '新しいサイズのBitmapオブジェクトを作成
     If GdipCreateBitmapFromScan0(lngWidth, lngHeight, 0, PixelFormat32bppARGB, ByVal 0&, hNewBmp) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
+ 
+    'サイズを変更
     If GdipGetImageGraphicsContext(hNewBmp, hNewGraphics) = 0 Then
 '        Call GdipSetInterpolationMode(hGraphics, InterpolationModeHighQuality)
         Call GdipSetInterpolationMode(hNewGraphics, InterpolationModeNearestNeighbor)
@@ -757,6 +526,7 @@ Finalization:
     If hNewGraphics <> 0 Then Call GdipDeleteGraphics(hNewGraphics)
     If hNewBmp <> 0 Then Call GdipDisposeImage(hNewBmp)
     If hOldBmp <> 0 Then Call GdipDisposeImage(hOldBmp)
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
 End Sub
 
 '*****************************************************************************
@@ -796,75 +566,103 @@ End Sub
 '*****************************************************************************
 Private Sub SetPixelsToBitmap(ByRef hGdiImage As LongPtr)
     Dim x As Long, y As Long
-    Dim Color As TOLE_COLOR
     For x = 1 To FWidth
         For y = 1 To FHeight
-            LSet Color = FPixels(x, y)
-            Call GdipBitmapSetPixel(hGdiImage, x - 1, y - 1, Color.Long)
+            Call GdipBitmapSetPixel(hGdiImage, x - 1, y - 1, CastARGB(FPixels(x, y)))
         Next
     Next
 End Sub
 
 '*****************************************************************************
-'[概要] 画像を読込む
-'[引数] ファイル名
-'[戻値] True:成功
+'※アルファチャネルが反映されないため却下
 '*****************************************************************************
-Public Function LoadFromFile(ByVal strFilename As String) As Boolean
-On Error GoTo ErrHandle
-    Call LoadImageFromFile(strFilename)
-    LoadFromFile = True
-ErrHandle:
-End Function
-
-'*****************************************************************************
-'[概要] 画像を保存する
-'[引数] ファイル名
-'[戻値] True:成功
-'*****************************************************************************
-Public Function SaveToFile(ByVal strFilename As String) As Boolean
-On Error GoTo ErrHandle
-    Call SaveImageToFile(strFilename)
-    SaveToFile = True
-ErrHandle:
-End Function
-
-''*****************************************************************************
-''[概要] PNG形式の画像をクリップボードから読込む
-''[引数] 縮小する幅と高さ
-''[戻値] True:成功
-''*****************************************************************************
-'Public Function LoadPNGFromClipbord() As Boolean
-'    Dim CF_PNG  As Long
-'    Dim hGlobal As LongPtr
-'
-'    If OpenClipboard(0) = 0 Then Exit Function
+'Private Sub SetPixelsToBitmap(ByRef hGdiImage As LongPtr)
 'On Error GoTo Finalization
-'    CF_PNG = RegisterClipboardFormat("PNG")
-'    hGlobal = GetClipboardData(CF_PNG)
-'    If hGlobal = 0 Then GoTo Finalization
+'    Dim BmpInfHeader  As BITMAPINFOHEADER
 '
-'    Dim Stream    As IUnknown
-'    Dim hGdiImage As LongPtr
-'    If CreateStreamOnHGlobal(ByVal hGlobal, 0, Stream) <> S_OK Then GoTo Finalization
-'    If GdipLoadImageFromStream(ObjPtr(Stream), hGdiImage) <> S_OK Then
-'        Call Err.Raise(513, "GdipLoadImageFromStreamエラー")
-'    End If
-'    Call GdipBitmapSetResolution(hGdiImage, 96#, 96#) '標準のDPIに設定
-'    Call GetPixelsFromBitmap(hGdiImage)
-'    LoadPNGFromClipbord = True
+'    With BmpInfHeader
+'        .size = Len(BmpInfHeader)
+'        .Width = FWidth
+'        .Height = -FHeight 'ボトムアップからトップダウンに変更
+'        .Planes = 1 '常に1
+'        .BitCount = 32 'Bit
+'        .Compression = 0 'BI_RGB(無圧縮)
+'        .SizeImage = 0 '省略可
+'    End With
+'
+'    'アルファチャネルは反映されない
+'    Call GdipCreateBitmapFromGdiDib(BmpInfHeader, FPixels(1, 1), hGdiImage)
 'Finalization:
-'    Call CloseClipboard
-'    If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
-'    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
-'End Function
+'End Sub
+
+'*****************************************************************************
+'[概要] BMP形式の画像をクリップボードから読込む
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub LoadBMPFromClipbord()
+    If OpenClipboard(0) = 0 Then Exit Sub
+On Error GoTo Finalization
+    Dim hBitmap As LongPtr
+    hBitmap = GetClipboardData(CF_BITMAP)
+    If hBitmap = 0 Then GoTo Finalization
+    Call GetPixelsFromHBITMAP(hBitmap)
+Finalization:
+    Call CloseClipboard
+End Sub
+
+'*****************************************************************************
+'[概要] PNG形式の画像をクリップボードから読込む
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub LoadPNGFromClipbord()
+    If OpenClipboard(0) = 0 Then Exit Sub
+On Error GoTo Finalization
+    Dim CF_PNG  As Long
+    Dim hGlobal As LongPtr
+    CF_PNG = RegisterClipboardFormat("PNG")
+    hGlobal = GetClipboardData(CF_PNG)
+    If hGlobal = 0 Then GoTo Finalization
+
+    Dim Stream    As IUnknown
+    Dim hGdiImage As LongPtr
+    If CreateStreamOnHGlobal(ByVal hGlobal, 0, Stream) <> S_OK Then GoTo Finalization
+    If GdipLoadImageFromStream(ObjPtr(Stream), hGdiImage) <> S_OK Then
+        Call Err.Raise(513, "GdipLoadImageFromStreamエラー")
+    End If
+    Call GdipBitmapSetResolution(hGdiImage, 96#, 96#) '標準のDPIに設定
+    Call GdipGetImageWidth(hGdiImage, FWidth)
+    Call GdipGetImageHeight(hGdiImage, FHeight)
+    ReDim FPixels(1 To FWidth, 1 To FHeight)
+    Call GetPixelsFromImage(hGdiImage)
+Finalization:
+    Call CloseClipboard
+    If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
+End Sub
+
+'*****************************************************************************
+'[概要] PNG形式とBMP形式の画像をクリップボードに書込む
+'[引数] なし
+'[戻値] True:成功
+'*****************************************************************************
+Public Sub SaveImageToClipbord()
+    If OpenClipboard(0) = 0 Then Exit Sub
+On Error GoTo Finalization
+    Call EmptyClipboard
+    Call SavePNGToClipbord
+    Call SaveBMPToClipbord
+Finalization:
+    Call CloseClipboard
+End Sub
 
 '*****************************************************************************
 '[概要] PNG形式の画像をクリップボードに書込む
 '[引数] なし
-'[戻値] True:成功
+'[戻値] なし
 '*****************************************************************************
-Private Function SavePNGToClipbord() As Boolean
+Private Sub SavePNGToClipbord()
 On Error GoTo ErrHandle
     Dim Stream    As IUnknown
     Dim hGdiImage As LongPtr
@@ -886,71 +684,20 @@ On Error GoTo ErrHandle
     Dim CF_PNG As Long
     CF_PNG = RegisterClipboardFormat("PNG")
     If SetClipboardData(CF_PNG, hGlobal) = 0 Then GoTo ErrHandle
-    
-    SavePNGToClipbord = True
 ErrHandle:
     If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
-End Function
-
-'*****************************************************************************
-'[概要] BMP形式の画像をクリップボードから読込む
-'[引数] なし
-'[戻値] True:成功
-'*****************************************************************************
-Public Function LoadBMPFromClipbord() As Boolean
-    Dim hBitmap As LongPtr
-    Dim hGdiImage As LongPtr
-    
-    If OpenClipboard(0) = 0 Then Exit Function
-    hBitmap = GetClipboardData(CF_BITMAP)
-    If hBitmap = 0 Then
-        Call CloseClipboard
-        Exit Function
-    End If
-    Call GetPixelsFromHBITMAP(hBitmap)
-        
-    LoadBMPFromClipbord = True
-Finalization:
-    If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
-    Call CloseClipboard
-End Function
-
-'*****************************************************************************
-'[概要] FPixelsからアルファチャネル有のBitmapオブジェクトを作成する
-'       アルファチャネルが反映されないため却下
-'[引数] なし
-'[戻値] Bitmapオブジェクト
-'*****************************************************************************
-'Private Function CreateBitmapFromPixels() As LongPtr
-'On Error GoTo Finalization
-'    Dim BmpInfHeader  As BITMAPINFOHEADER
-'
-'    With BmpInfHeader
-'        .Size = Len(BmpInfHeader)
-'        .Width = FWidth
-'        .Height = -FHeight 'ボトムアップからトップダウンに変更
-'        .Planes = 1 '常に1
-'        .BitCount = 32 'Bit
-'        .Compression = 0 'BI_RGB(無圧縮)
-'        .SizeImage = 0 '省略可
-'    End With
-'
-'    Dim hGdiImage As LongPtr
-'    'アルファチャネルは反映されない
-'    Call GdipCreateBitmapFromGdiDib(BmpInfHeader, FPixels(1, 1), hGdiImage)
-'    CreateBitmapFromPixels = hGdiImage
-'Finalization:
-'End Function
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
+End Sub
 
 '*****************************************************************************
 '[概要] BMP形式の画像をクリップボードに書込む
 '[引数] なし
-'[戻値] True:成功
+'[戻値] なし
 '*****************************************************************************
-Private Function SaveBMPToClipbord() As Boolean
+Private Function SaveBMPToClipbord()
+On Error GoTo Finalization
     Dim hGdiImage As LongPtr
     Dim hBitmap As LongPtr
-On Error GoTo Finalization
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then
         Exit Function
     End If
@@ -962,45 +709,6 @@ On Error GoTo Finalization
 Finalization:
     If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
 End Function
-
-'*****************************************************************************
-'[概要] PNG形式とBMP形式の画像をクリップボードに書込む
-'[引数] なし
-'[戻値] True:成功
-'*****************************************************************************
-Public Function SaveImageToClipbord() As Boolean
-    If OpenClipboard(0) = 0 Then Exit Function
-On Error GoTo Finalization
-    Call EmptyClipboard
-    SaveImageToClipbord = SavePNGToClipbord() Or SaveBMPToClipbord()
-Finalization:
-    Call CloseClipboard
-End Function
-
-'*****************************************************************************
-'[概要] 画素の色を置換する
-'[引数] 置換前の色のセル，置換後の色のセル
-'[戻値] なし
-'*****************************************************************************
-Public Sub ChangeColor(ByVal objSrcCell As Range, ByVal objDstCell As Range)
-    Dim x As Long, y As Long
-    For x = 1 To FWidth
-        For y = 1 To FHeight
-            If SameColor2(CellToColor(objSrcCell), FPixels(x, y)) Then
-                FPixels(x, y) = CellToColor(objDstCell)
-            End If
-        Next
-    Next
-End Sub
-
-'*****************************************************************************
-'[概要] 画素の色を置換する
-'[引数] 置換前の色のセル，置換対象のセル
-'[戻値] なし
-'*****************************************************************************
-Public Sub ChangeCellColor(ByVal objSrcCell As Range, ByRef objDstCell As Range)
-    Call ColorToCell(objDstCell, CellToColor(objSrcCell))
-End Sub
 
 '*****************************************************************************
 '[概要] Cellの色からFPixelsを設定
@@ -1024,11 +732,12 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Public Sub SetPixelsToRange(ByVal objRange As Range, Optional Mode As Long = 0, Optional objColorCell As Range = Nothing, Optional blnTransparent As Boolean = False)
-    Dim objRange2 As Range
-    Set objRange2 = objRange.Resize(FHeight, FWidth)
     Dim objCell As Range
+    Dim Color  As TRGBQuad
+    If Mode > 0 Then
+        Color = CellToColor(objColorCell)
+    End If
     
-    Application.ScreenUpdating = False
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
@@ -1037,7 +746,7 @@ Public Sub SetPixelsToRange(ByVal objRange As Range, Optional Mode As Long = 0, 
             Case 0
                 Call ColorToCell(objCell, FPixels(x, y))
             Case 1, 2
-                If SameColor2(CellToColor(objColorCell), FPixels(x, y)) = (Mode = 1) Then
+                If SameColor(Color, FPixels(x, y)) = (Mode = 1) Then
                     Call ColorToCell(objCell, FPixels(x, y))
                 Else
                     If blnTransparent Then
@@ -1051,10 +760,11 @@ End Sub
 
 '*****************************************************************************
 '[概要] アイコンファイルとして画像を保存する
+'       GDI+では、減色されてアルファ情報も失われるため使用しない
 '[引数] ファイル名
-'[戻値] True:成功
+'[戻値] なし
 '*****************************************************************************
-Public Function SaveToIcon(ByVal strFilename As String) As Boolean
+Public Sub SaveToIcon(ByVal strFilename As String)
 On Error GoTo Finalization
     Dim MaskSize    As Long
     Dim MaskBits()  As Byte
@@ -1081,7 +791,7 @@ On Error GoTo Finalization
     End With
     
     With BmpInfHeader
-        .Size = Len(BmpInfHeader)
+        .size = Len(BmpInfHeader)
         .Width = FWidth
         .Height = FHeight * 2
         .Planes = 1 '常に1
@@ -1107,40 +817,10 @@ On Error GoTo Finalization
     Put #File, , BmpInfHeader
     Put #File, , FPixels()
     Put #File, , MaskBits
-    
-    SaveToIcon = True
 Finalization:
     If blnOpen Then Close #File
     Call FlipHorizontal  '水平方向の反転を戻す
-End Function
-
-'*****************************************************************************
-'[概要] なぜか減色されてしまうため使えず
-'*****************************************************************************
-Private Function SaveToIcon2(ByVal strFilename As String) As Boolean
-    Dim uPicInfo As PICTDESC_ICON
-    Dim hGdiImage As LongPtr
-    Dim hIcon As LongPtr
-    Dim Icon As IPicture
-
-    If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then Exit Function
-On Error GoTo Finalization
-    Call SetPixelsToBitmap(hGdiImage)
-    Call GdipCreateHICONFromBitmap(hGdiImage, hIcon)
-    With uPicInfo
-        .Size = Len(uPicInfo)
-        .Type = PICTYPE_ICON
-        .hIcon = hIcon
-    End With
-
-    Call GdipCreateHICONFromBitmap(hGdiImage, hIcon)
-    Call OleCreatePictureIndirect(uPicInfo, GetCLSID(IID_IPictureDisp), True, Icon)
-    Call SavePicture(Icon, strFilename)
-
-    SaveToIcon2 = True
-Finalization:
-    If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
-End Function
+End Sub
 
 '*****************************************************************************
 '[概要] FPixelsからMaskBitsを作成
@@ -1180,9 +860,9 @@ End Function
 '*****************************************************************************
 '[概要] Bitmap形式で画像を保存する
 '[引数] ファイル名
-'[戻値] True:成功
+'[戻値] なし
 '*****************************************************************************
-Public Function SaveToBmp(ByVal strFilename As String) As Boolean
+Public Sub SaveToBmp(ByVal strFilename As String)
 On Error GoTo Finalization
     Dim BmpFileHeader As BITMAPFILEHEADER
     Dim BmpInfHeader  As BITMAPINFOHEADER
@@ -1190,11 +870,11 @@ On Error GoTo Finalization
     With BmpFileHeader
         .Type = &H4D42 'BM'
         .OffBits = Len(BmpFileHeader) + Len(BmpInfHeader)
-        .Size = .OffBits + FWidth * 4 * FHeight '32Bitの時
+        .size = .OffBits + FWidth * 4 * FHeight '32Bitの時
     End With
     
     With BmpInfHeader
-        .Size = Len(BmpInfHeader)
+        .size = Len(BmpInfHeader)
         .Width = FWidth
         .Height = FHeight
         .Planes = 1 '常に1
@@ -1214,53 +894,6 @@ On Error GoTo Finalization
     Call FlipHorizontal
     Put #File, , FPixels()
     Call FlipHorizontal '反転を元に戻す
-    
-    SaveToBmp = True
-Finalization:
-    If blnOpen Then Close #File
-End Function
-
-'*****************************************************************************
-'[概要] 参考
-'*****************************************************************************
-Public Function LoadToIcon(ByVal strFilename As String) As Boolean
-    Dim IconFileHeader As ICONDIR
-    Dim IconInfHeader  As ICONDIRENTRY
-    Dim BmpInfHeader   As BITMAPINFOHEADER
-    
-    Dim File As Integer
-    File = FreeFile()
-    Open strFilename For Binary Access Read As #File
-    Get #File, , IconFileHeader
-    Get #File, , IconInfHeader
-    Get #File, , BmpInfHeader
-    Close #File
-End Function
-
-'*****************************************************************************
-'[概要] バイナリファイルを読込む
-'[引数] ファイル名、読込むセルの位置、1行当たり何バイト表示するか
-'*****************************************************************************
-Public Sub LoadBinaryFile(ByVal strFilename As String, ByRef objCell As Range, Optional ColSize As Long = 16)
-On Error GoTo Finalization
-    Dim RowSize As Long
-    RowSize = Int((FileLen(strFilename) + ColSize - 1) / ColSize)
-    ReDim Data(1 To ColSize, 1 To RowSize) As Byte
-        
-    Dim File As Integer
-    Dim blnOpen As Boolean
-    File = FreeFile()
-    Open strFilename For Binary Access Read As #File
-    Get #File, , Data
-    Close #File
-
-    Dim x As Long
-    Dim y As Long
-    For y = 1 To RowSize
-        For x = 1 To ColSize
-            objCell.Cells(y, x) = Data(x, y)
-        Next
-    Next
 Finalization:
     If blnOpen Then Close #File
 End Sub
@@ -1272,13 +905,10 @@ End Sub
 '*****************************************************************************
 Public Sub GetPixelsFromHBITMAP(ByVal hBitmap As LongPtr)
 On Error GoTo Finalization
-'    Dim Bmp    As TBITMAP
-'    Call GetObject(CommandBars.GetImageMso("Paste", 32, 32).Handle, Len(Bmp), Bmp)
-    
     Dim hDC   As LongPtr
     Dim BmpInfHeader   As BITMAPINFOHEADER
     hDC = CreateCompatibleDC(0)
-    BmpInfHeader.Size = 40 '40固定
+    BmpInfHeader.size = 40 '40固定
     Call GetDIBits(hDC, hBitmap, 0, 0, ByVal 0, BmpInfHeader, DIB_RGB_COLORS)
     Call SetSize(BmpInfHeader.Width, Abs(BmpInfHeader.Height))
     
@@ -1296,16 +926,34 @@ Finalization:
 End Sub
 
 '*****************************************************************************
+'※アルファチャネルが反映されないため却下
+'*****************************************************************************
+'Public Sub GetPixelsFromHBITMAP(ByVal hBitmap As LongPtr)
+'On Error GoTo Finalization
+'    Dim hGdiImage As LongPtr
+'    If GdipCreateBitmapFromHBITMAP(hBitmap, 0&, hGdiImage) <> S_OK Then
+'        Call Err.Raise(513, "GdipCreateBitmapFromHBITMAPエラー")
+'    End If
+'    Call GdipGetImageWidth(hGdiImage, FWidth)
+'    Call GdipGetImageHeight(hGdiImage, FHeight)
+'    ReDim FPixels(1 To FWidth, 1 To FHeight)
+'    Call GetPixelsFromImage(hGdiImage)
+'Finalization:
+'    If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
+'    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
+'End Sub
+
+'*****************************************************************************
 '[概要] IPictureに変換する
 '[引数] Bitmapハンドル
 '[戻値] なし
 '*****************************************************************************
 Public Function SetToIPicture() As IPicture
+On Error GoTo Finalization
     Dim uPicInfo As PICTDESC_BMP
     Dim hGdiImage As LongPtr
     Dim hBitmap As LongPtr
     Dim IBitmap As IPicture
-On Error GoTo Finalization
     If GdipCreateBitmapFromScan0(FWidth, FHeight, 0, PixelFormat32bppARGB, ByVal 0&, hGdiImage) <> S_OK Then
         Exit Function
     End If
@@ -1313,7 +961,7 @@ On Error GoTo Finalization
     If GdipCreateHBITMAPFromBitmap(hGdiImage, hBitmap, 0) <> S_OK Then GoTo Finalization
 
     With uPicInfo
-        .Size = Len(uPicInfo)
+        .size = Len(uPicInfo)
         .Type = PICTYPE_BITMAP
         .hBitmap = hBitmap
         .hPal = 0
@@ -1326,78 +974,14 @@ Finalization:
 End Function
 
 '*****************************************************************************
-'[概要] ARGB色が同じかどうか判定する
-'[引数] 対象の色
-'[戻値] True:一致
-'*****************************************************************************
-Private Function SameColor2(ByRef Color1 As TRGBQuad, ByRef Color2 As TRGBQuad) As Boolean
-    SameColor2 = (Color1.Alpha = Color2.Alpha And _
-                  Color1.Red = Color2.Red And _
-                  Color1.Green = Color2.Green And _
-                  Color1.Blue = Color2.Blue)
-End Function
-
-'*****************************************************************************
-'[概要] セルの色が同じかどうか判定
-'[引数] 対象のセル
-'[戻値] True:同じ
-'*****************************************************************************
-Public Function SameCellColor(ByRef objCell1 As Range, ByRef objCell2 As Range) As Boolean
-    SameCellColor = SameColor2(CellToColor(objCell1), CellToColor(objCell2))
-    Debug.Print
-    Debug.Print objCell1.Address(0, 0), CellToColor(objCell1).Red & CellToColor(objCell1).Green & CellToColor(objCell1).Blue
-    Debug.Print objCell2.Address(0, 0), CellToColor(objCell2).Red & CellToColor(objCell2).Green & CellToColor(objCell2).Blue
-End Function
-
-'*****************************************************************************
-'[概要] RGBおよびアルファ値を増減させる
-'[引数] lngUp:増加値(マイナスは減少値)、RGBαのいずれを増減の対象とするかどうか
-'[戻値] なし
-'*****************************************************************************
-Public Sub AdjustColor(ByVal lngUp As Long, ByVal blnRed As Boolean, ByVal blnGreen As Boolean, ByVal blnBlue As Boolean, ByVal blnAlpha As Boolean)
-    Dim x As Long, y As Long
-    For x = 1 To FWidth
-        For y = 1 To FHeight
-            If lngUp > 0 Then
-                If blnRed Then
-                    FPixels(x, y).Red = WorksheetFunction.Min(255, FPixels(x, y).Red + lngUp)
-                End If
-                If blnGreen Then
-                    FPixels(x, y).Green = WorksheetFunction.Min(255, FPixels(x, y).Green + lngUp)
-                End If
-                If blnBlue Then
-                    FPixels(x, y).Blue = WorksheetFunction.Min(255, FPixels(x, y).Blue + lngUp)
-                End If
-                If blnAlpha Then
-                    FPixels(x, y).Alpha = WorksheetFunction.Min(255, FPixels(x, y).Alpha + lngUp)
-                End If
-            Else
-                If blnRed Then
-                    FPixels(x, y).Red = WorksheetFunction.Max(0, FPixels(x, y).Red + lngUp)
-                End If
-                If blnGreen Then
-                    FPixels(x, y).Green = WorksheetFunction.Max(0, FPixels(x, y).Green + lngUp)
-                End If
-                If blnBlue Then
-                    FPixels(x, y).Blue = WorksheetFunction.Max(0, FPixels(x, y).Blue + lngUp)
-                End If
-                If blnAlpha Then
-                    FPixels(x, y).Alpha = WorksheetFunction.Max(0, FPixels(x, y).Alpha + lngUp)
-                End If
-            End If
-        Next
-    Next
-End Sub
-
-'*****************************************************************************
 '[概要] 塗潰す
 '[引数] x,y:塗潰し開始位置、objColorCell塗潰し色のセル
 '[戻値] なし
 '*****************************************************************************
 Public Sub Fill(ByVal x As Long, ByVal y As Long, ByRef objColorCell As Range)
-    Dim dstColor As TRGBQuad
-    dstColor = CellToColor(objColorCell)
-    If SameColor2(FPixels(x, y), dstColor) Then
+    Dim DstColor As TRGBQuad
+    DstColor = CellToColor(objColorCell)
+    If SameColor(FPixels(x, y), DstColor) Then
         Exit Sub
     End If
     
@@ -1408,7 +992,7 @@ Public Sub Fill(ByVal x As Long, ByVal y As Long, ByRef objColorCell As Range)
     Dim yy As Long
     For xx = 1 To FWidth
         For yy = 1 To FHeight
-            If SameColor2(FPixels(xx, yy), FPixels(x, y)) Then
+            If SameColor(FPixels(xx, yy), FPixels(x, y)) Then
                 '開始セルと同色のセルに1を設定
                 Pixels(xx, yy) = 1
             End If
@@ -1422,7 +1006,7 @@ Public Sub Fill(ByVal x As Long, ByVal y As Long, ByRef objColorCell As Range)
     For xx = 1 To FWidth
         For yy = 1 To FHeight
             If Pixels(xx, yy) = 2 Then
-                FPixels(xx, yy) = dstColor
+                FPixels(xx, yy) = DstColor
             End If
         Next
     Next
@@ -1436,7 +1020,6 @@ End Sub
 '*****************************************************************************
 Private Function HasAlpha() As Boolean
     Dim x As Long, y As Long
-    Dim Color As TOLE_COLOR
     For x = 1 To FWidth
         For y = 1 To FHeight
             If FPixels(x, y).Alpha <> 0 Then
@@ -1521,4 +1104,5 @@ End Function
 '        Call Fill2(x - 1, y, Pixels())
 '    End If
 'End Sub
+
 

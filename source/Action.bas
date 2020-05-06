@@ -2,55 +2,6 @@ Attribute VB_Name = "Action"
 Option Explicit
 
 Private Declare PtrSafe Function GetKeyState Lib "user32" (ByVal lngVirtKey As Long) As Integer
-Private Declare PtrSafe Function GetDeviceCaps Lib "gdi32" (ByVal hDC As LongPtr, ByVal nIndex As Long) As Long
-Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As Long
-Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hwnd As LongPtr, ByVal hDC As LongPtr) As Long
-
-Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-
-Private Declare PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As LongPtr) As LongPtr
-Private Declare PtrSafe Function DeleteDC Lib "gdi32" (ByVal hDC As LongPtr) As Long
-Private Declare PtrSafe Function GetDIBits Lib "gdi32" (ByVal aHDC As LongPtr, ByVal hBitmapptr As Long, ByVal nStartScan As Long, ByVal nNumScans As Long, ByRef lpBits As Any, ByRef lpBI As Any, ByVal wUsage As Long) As Long
-Private Const DIB_RGB_COLORS = 0&
-
-Private Declare PtrSafe Function GetObject Lib "gdi32" Alias "GetObjectA" (ByVal hObject As LongPtr, ByVal nCount As Long, lpObject As Any) As Long
-Private Type BITMAPINFOHEADER
-    Size          As Long
-    Width         As Long
-    Height        As Long
-    Planes        As Integer
-    BitCount      As Integer
-    Compression   As Long
-    SizeImg     As Long
-    XPelsPerMeter As Long
-    YPelsPerMeter As Long
-    ClrUsed       As Long
-    ClrImportant  As Long
-End Type
-
-Private Type BITMAPINFO
-    Header As BITMAPINFOHEADER
-    Colors(1 To 256) As Long
-End Type
-
-Private Type TBITMAP
-    Type As Long
-    Width As Long
-    Height As Long
-    WidthBytes As Long
-    Planes As Integer
-    BitsPixel As Integer
-#If Win64 Then
-    Bits As LongPtr
-    Reserve As Long '構造体を64Bitの倍数にするため
-#Else
-    Bits As Long
-#End If
-End Type
-
-Private Const LOGPIXELSX = 88
-Private Const LOGPIXELSY = 90
-
 Public FFormLoad As Boolean
 
 '*****************************************************************************
@@ -81,11 +32,9 @@ Public Sub ImageMso取得()
     Dim lngWidth As Long
     Dim lngHeight As Long
     Do While True
-        strInput = InputBox("幅,高さを入力してください" & vbCrLf & vbCrLf & "例 32,32")
+        strInput = InputBox("幅,高さを入力してください" & vbCrLf & vbCrLf & "例 32,32", , "32,32")
         If strInput = "" Then
-            lngWidth = 32
-            lngHeight = 32
-            Exit Do
+            Exit Sub
         End If
         WidthAndHeight = Split(strInput, ",")
         If UBound(WidthAndHeight) = 1 Then
@@ -101,8 +50,10 @@ On Error GoTo ErrHandle
     Dim img As New CImage
     Call img.GetPixelsFromHBITMAP(CommandBars.GetImageMso(strImgMso, lngWidth, lngHeight).Handle)
     Application.ScreenUpdating = False
+    Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
     Call img.SetPixelsToRange(ActiveCell)
     Call ActiveCell.Resize(img.Height, img.Width).Select
+    Call SetOnUndo("ImageMso取得")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -126,14 +77,16 @@ On Error GoTo ErrHandle
     End If
     
     Dim img As New CImage
-    Call img.LoadFromFile(vDBName)
+    Call img.LoadImageFromFile(vDBName)
     If img.Width > 256 Or img.Height > 256 Then
         Call MsgBox("幅または高さが256Pixelを超えるファイルは読み込めません")
         Exit Sub
     End If
     Application.ScreenUpdating = False
+    Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
     Call img.SetPixelsToRange(ActiveCell)
     Call ActiveCell.Resize(img.Height, img.Width).Select
+    Call SetOnUndo("画像読込")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -207,7 +160,9 @@ On Error GoTo ErrHandle
     Call img.GetPixelsFromRange(Selection)
     Call img.FlipHorizontal
     Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
     Call img.SetPixelsToRange(Selection)
+    Call SetOnUndo("反転")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -225,7 +180,9 @@ On Error GoTo ErrHandle
     Call img.GetPixelsFromRange(Selection)
     Call img.FlipVertical
     Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
     Call img.SetPixelsToRange(Selection)
+    Call SetOnUndo("反転")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -260,8 +217,11 @@ On Error GoTo ErrHandle
     Dim img As New CImage
     Call img.GetPixelsFromRange(objCopyRange)
     Call img.Rotate(lngAngle)
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
     Call img.SetPixelsToRange(Selection)
     Call ActiveCell.Resize(img.Height, img.Width).Select
+    Call SetOnUndo("回転")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -297,9 +257,7 @@ On Error GoTo ErrHandle
     Do While True
         strInput = InputBox("幅,高さを入力してください", , strDefault)
         If strInput = "" Then
-            lngWidth = img.Width
-            lngHeight = img.Height
-            Exit Do
+            Exit Sub
         End If
         WidthAndHeight = Split(strInput, ",")
         If UBound(WidthAndHeight) = 1 Then
@@ -313,8 +271,10 @@ On Error GoTo ErrHandle
     
     Call img.Resize(lngWidth, lngHeight)
     Application.ScreenUpdating = False
+    Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
     Call img.SetPixelsToRange(Selection)
     Call ActiveCell.Resize(img.Height, img.Width).Select
+    Call SetOnUndo("画像読込")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -389,11 +349,13 @@ On Error GoTo ErrHandle
     Call img.LoadBMPFromClipbord
     Call img.Resize(lngWidth, lngHeight)
     Application.ScreenUpdating = False
+    Call SaveUndoInfo(objCell.Resize(img.Height, img.Width))
     Call img.SetPixelsToRange(objCell)
     Call objCell.Resize(img.Height, img.Width).Select
     If Not (objWkShape Is Nothing) Then
         Call objWkShape.Delete
     End If
+    Call SetOnUndo("画像読込")
 Exit Sub
 ErrHandle:
     If Not (objWkShape Is Nothing) Then
@@ -458,23 +420,22 @@ Public Sub 透明色強調()
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
     
-    Dim objSelection As Range
-    Dim objCell As Range
-    Set objSelection = Selection
-    If objSelection.Rows.Count > 256 Or objSelection.Columns.Count > 256 Then
+    If Selection.Rows.Count > 256 Or Selection.Columns.Count > 256 Then
         Call MsgBox("幅または高さが256マスを超える時は実行出来ません")
         Exit Sub
     End If
     
     '選択範囲の重複を排除
-    Set objSelection = ReSelectRange(objSelection)
+    Dim objSelection As Range
+    Set objSelection = ReSelectRange(Selection)
     
-    Dim img As New CImage
-    Dim objArea As Range
-    For Each objArea In objSelection.Areas
-        Call img.GetPixelsFromRange(objArea)
-        Call img.SetPixelsToRange(objArea)
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    Dim objCell As Range
+    For Each objCell In objSelection
+        Call ColorToCell(objCell, CellToColor(objCell))
     Next
+    Call SetOnUndo("透明色強調")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -493,6 +454,7 @@ On Error GoTo ErrHandle
     Else
         Set objSelection = ActiveCell
     End If
+    
     Dim objCanvas As Range
     Set objCanvas = SelectCell("キャンバスの範囲を選択してください", objSelection)
     If objCanvas Is Nothing Then
@@ -503,31 +465,32 @@ On Error GoTo ErrHandle
             Exit Sub
         End If
     End If
-    
-    Dim objSrcCell As Range
-    Set objSrcCell = SelectCell("置換前の色のセルを選択してください", ActiveCell)
-    If objSrcCell Is Nothing Then
-        Exit Sub
-    End If
-    Dim objDstCell As Range
-    Set objDstCell = SelectCell("置換後の色のセルを選択してください", ActiveCell)
-    If objDstCell Is Nothing Then
-        Exit Sub
-    End If
-    
     '選択範囲の重複を排除
     Set objCanvas = ReSelectRange(objCanvas)
     
-    Dim img As New CImage
-    Dim lngColor As Long
-    lngColor = img
-    Dim objArea As Range
-    For Each objArea In objCanvas
-        If img.SameCellColor(objSrcCell(1), objArea) Then
-            Debug.Print objArea.Address(0, 0)
-            Call img.ChangeCellColor(objDstCell(1), objArea)
+    Dim objCell As Range
+    Dim SrcColor As TRGBQuad
+    Set objCell = SelectCell("置換前の色のセルを選択してください", ActiveCell)
+    If objCell Is Nothing Then
+        Exit Sub
+    End If
+    SrcColor = CellToColor(objCell(1))
+    
+    Dim DstColor As TRGBQuad
+    Set objCell = SelectCell("置換後の色のセルを選択してください", ActiveCell)
+    If objCell Is Nothing Then
+        Exit Sub
+    End If
+    DstColor = CellToColor(objCell(1))
+    
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    For Each objCell In objCanvas
+        If SameColor(SrcColor, CellToColor(objCell)) Then
+            Call ColorToCell(objCell, DstColor)
         End If
     Next
+    Call SetOnUndo("色の置換")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -541,6 +504,7 @@ End Sub
 Public Sub 同色選択(ByVal blnSameColor As Boolean)
 On Error GoTo ErrHandle
     Dim objSelection As Range
+    Dim objCell As Range
     If CheckSelection = E_Range Then
         Set objSelection = Selection
     Else
@@ -557,23 +521,22 @@ On Error GoTo ErrHandle
         End If
     End If
     
-    Dim objColorCell As Range
+    Dim SelectColor  As TRGBQuad
     Dim strMsg As String
     If blnSameColor Then
         strMsg = "選択したい色のセルを選択してください"
     Else
         strMsg = "選択したくない色のセルを選択してください"
     End If
-    Set objColorCell = SelectCell(strMsg, ActiveCell)
-    If objColorCell Is Nothing Then
+    Set objCell = SelectCell(strMsg, ActiveCell)
+    If objCell Is Nothing Then
         Exit Sub
     End If
+    SelectColor = CellToColor(objCell(1))
     
-    Dim img As New CImage
     Dim objNewSelection As Range
-    Dim objCell As Range
     For Each objCell In objCanvas
-        If img.SameCellColor(objColorCell, objCell) = blnSameColor Then
+        If SameColor(SelectColor, CellToColor(objCell)) = blnSameColor Then
             If objNewSelection Is Nothing Then
                 Set objNewSelection = objCell
             Else
@@ -687,17 +650,23 @@ On Error GoTo ErrHandle
         End If
     End If
     
-    Dim img As New CImage
     Application.ScreenUpdating = False
-    Call img.GetPixelsFromRange(objCopyRange)
-    If objCopyRange.Count > 1 Then
-        Call img.SetPixelsToRange(objSelection, lngMode, objColorCell, FChecked(3))
-    Else
+    If objCopyRange.Count = 1 Then
+        Dim DstColor As TRGBQuad
+        DstColor = CellToColor(objCopyRange)
+        Call SaveUndoInfo(objSelection)
         Dim objCell As Range
         For Each objCell In objSelection
-            Call img.SetPixelsToRange(objCell)
+            Call ColorToCell(objCell, DstColor)
         Next
+    Else
+        Dim img As New CImage
+        Call img.GetPixelsFromRange(objCopyRange)
+        Call SaveUndoInfo(objSelection.Resize(img.Height, img.Width))
+        Call img.SetPixelsToRange(objSelection, lngMode, objColorCell, FChecked(3))
+        Call objSelection.Resize(img.Height, img.Width).Select
     End If
+    Call SetOnUndo("貼付け")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -747,13 +716,15 @@ On Error GoTo ErrHandle
     Dim objSelection As Range
     Set objSelection = ReSelectRange(Selection)
     
-    Dim img As New CImage
-    Dim objArea As Range
-    For Each objArea In objSelection.Areas
-        Call img.GetPixelsFromRange(objArea)
-        Call img.AdjustColor(lngUp, FChecked(4), FChecked(5), FChecked(6), FChecked(7))
-        Call img.SetPixelsToRange(objArea)
+    Dim objCell As Range
+    Dim ARGB As TRGBQuad
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection, "色調整")
+    For Each objCell In objSelection
+        ARGB = AdjustColor(CellToColor(objCell), lngUp, FChecked(4), FChecked(5), FChecked(6), FChecked(7))
+        Call ColorToCell(objCell, ARGB)
     Next
+    Call SetOnUndo("色調整")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -820,122 +791,12 @@ On Error GoTo ErrHandle
     Call img.Fill(objStartCell.Column - objCanvas.Column + 1, _
                   objStartCell.Row - objCanvas.Row + 1, _
                   objColorCell)
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(objCanvas)
     Call img.SetPixelsToRange(objCanvas)
-    
+    Call SetOnUndo("塗潰し")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Sub
-
-'*****************************************************************************
-'[概要] 領域と領域の重なる領域を取得する
-'[引数] 対象領域(Nothingも可)
-'[戻値] objRange1 ∩ objRange2
-'*****************************************************************************
-Private Function IntersectRange(ByRef objRange1 As Range, ByRef objRange2 As Range) As Range
-    Select Case True
-    Case (objRange1 Is Nothing) Or (objRange2 Is Nothing)
-        Set IntersectRange = Nothing
-    Case Else
-        Set IntersectRange = Intersect(objRange1, objRange2)
-    End Select
-End Function
-
-'*****************************************************************************
-'[概要] 領域に領域を加える
-'[引数] 対象領域(Nothingも可)
-'[戻値] objRange1 ∪ objRange2
-'*****************************************************************************
-Private Function UnionRange(ByRef objRange1 As Range, ByRef objRange2 As Range) As Range
-    Select Case True
-    Case (objRange1 Is Nothing) And (objRange2 Is Nothing)
-        Set UnionRange = Nothing
-    Case (objRange1 Is Nothing)
-        Set UnionRange = objRange2
-    Case (objRange2 Is Nothing)
-        Set UnionRange = objRange1
-    Case Else
-        Set UnionRange = Union(objRange1, objRange2)
-    End Select
-End Function
-
-'*****************************************************************************
-'[概要] 領域から領域を、除外する
-'       Ａ－Ｂ = Ａ∩!Ｂ
-'       !Ｂ = !(B1∪B2∪B3...∪Bn) = !B1∩!B2∩!B3...∩!Bn
-'[引数] 対象領域
-'[戻値] objRange1 － objRange2
-'*****************************************************************************
-Private Function MinusRange(ByRef objRange1 As Range, ByRef objRange2 As Range) As Range
-    Dim objRounds As Range
-    Dim i As Long
-    
-    If objRange2 Is Nothing Then
-        Set MinusRange = objRange1
-        Exit Function
-    End If
-    
-    '除外する領域の数だけループ
-    '!Ｂ = !B1∩!B2∩!B3.....∩!Bn
-    Set objRounds = ReverseRange(objRange2.Areas(1))
-    For i = 2 To objRange2.Areas.Count
-        Set objRounds = IntersectRange(objRounds, ReverseRange(objRange2.Areas(i)))
-    Next
-    
-    'Ａ∩!Ｂ
-    Set MinusRange = IntersectRange(objRange1, objRounds)
-End Function
-
-'*****************************************************************************
-'[概要] 領域を反転する
-'[引数] 対象領域
-'[戻値] !objRange
-'*****************************************************************************
-Private Function ReverseRange(ByRef objRange As Range) As Range
-    Dim i As Long
-    Dim objRound(1 To 4) As Range
-    
-    With objRange.Parent
-        On Error Resume Next
-        '選択領域より上の領域すべて
-        Set objRound(1) = .Range(.Rows(1), _
-                                 .Rows(objRange.Row - 1))
-        '選択領域より下の領域すべて
-        Set objRound(2) = .Range(.Rows(objRange.Row + objRange.Rows.Count), _
-                                 .Rows(Rows.Count))
-        '選択領域より左の領域すべて
-        Set objRound(3) = .Range(.Columns(1), _
-                                 .Columns(objRange.Column - 1))
-        '選択領域より右の領域すべて
-        Set objRound(4) = .Range(.Columns(objRange.Column + objRange.Columns.Count), _
-                                 .Columns(Columns.Count))
-        On Error GoTo 0
-    End With
-    
-    '選択領域以外の領域を設定
-    For i = 1 To 4
-        Set ReverseRange = UnionRange(ReverseRange, objRound(i))
-    Next
-End Function
-
-'*****************************************************************************
-'[概要] 領域の重複を省いた領域を取得
-'[引数] 対象領域
-'[戻値] 領域の重複を省いた領域
-'*****************************************************************************
-Private Function ReSelectRange(ByRef objRange As Range) As Range
-    Dim objArrange(1 To 3) As Range
-    With objRange
-        On Error Resume Next
-        Set objArrange(1) = .SpecialCells(xlCellTypeConstants)
-        Set objArrange(2) = .SpecialCells(xlCellTypeFormulas)
-        Set objArrange(3) = .SpecialCells(xlCellTypeBlanks)
-        On Error GoTo 0
-    End With
-
-    Dim i As Long
-    For i = 1 To 3
-        Set ReSelectRange = UnionRange(ReSelectRange, objArrange(i))
-    Next
-End Function
 

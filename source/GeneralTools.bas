@@ -25,6 +25,9 @@ Public Enum ESelectionType
     E_Other
 End Enum
 
+Public Const MAX_WIDTH = 64
+Public Const MAX_HEIGHT = 64
+
 '*****************************************************************************
 '[概要] 選択されているかオブジェクトの種類を判定する
 '[引数] なし
@@ -69,19 +72,19 @@ Public Function GetCopyRange() As Range
     End If
      
 On Error GoTo ErrHandle
-    Dim Size As Long
+    Dim size As Long
     Dim p As LongPtr
-    Size = GlobalSize(hMem)
+    size = GlobalSize(hMem)
     p = GlobalLock(hMem)
-    ReDim Data(1 To Size) As Byte
-    Call CopyMemory(Data(1), ByVal p, Size)
+    ReDim Data(1 To size) As Byte
+    Call CopyMemory(Data(1), ByVal p, size)
     Call GlobalUnlock(hMem)
     Call CloseClipboard
     hMem = 0
     
     Dim strData As String
     Dim i As Long
-    For i = 1 To Size
+    For i = 1 To size
         If Data(i) = 0 Then
             Data(i) = Asc("/") 'シート名にもファイル名にも使えない文字
         End If
@@ -148,3 +151,123 @@ Public Function GetFileExtension(ByVal strFilename As String) As String
         GetFileExtension = UCase(.GetExtensionName(strFilename))
     End With
 End Function
+
+'*****************************************************************************
+'[概要] 領域と領域の重なる領域を取得する
+'[引数] 対象領域(Nothingも可)
+'[戻値] objRange1 ∩ objRange2
+'*****************************************************************************
+Public Function IntersectRange(ByRef objRange1 As Range, ByRef objRange2 As Range) As Range
+    Select Case True
+    Case (objRange1 Is Nothing) Or (objRange2 Is Nothing)
+        Set IntersectRange = Nothing
+    Case Else
+        Set IntersectRange = Intersect(objRange1, objRange2)
+    End Select
+End Function
+
+'*****************************************************************************
+'[概要] 領域に領域を加える
+'[引数] 対象領域(Nothingも可)
+'[戻値] objRange1 ∪ objRange2
+'*****************************************************************************
+Public Function UnionRange(ByRef objRange1 As Range, ByRef objRange2 As Range) As Range
+    Select Case True
+    Case (objRange1 Is Nothing) And (objRange2 Is Nothing)
+        Set UnionRange = Nothing
+    Case (objRange1 Is Nothing)
+        Set UnionRange = objRange2
+    Case (objRange2 Is Nothing)
+        Set UnionRange = objRange1
+    Case Else
+        Set UnionRange = Union(objRange1, objRange2)
+    End Select
+End Function
+
+'*****************************************************************************
+'[概要] 領域から領域を、除外する
+'       Ａ－Ｂ = Ａ∩!Ｂ
+'       !Ｂ = !(B1∪B2∪B3...∪Bn) = !B1∩!B2∩!B3...∩!Bn
+'[引数] 対象領域
+'[戻値] objRange1 － objRange2
+'*****************************************************************************
+Public Function MinusRange(ByRef objRange1 As Range, ByRef objRange2 As Range) As Range
+    Dim objRounds As Range
+    Dim i As Long
+    
+    If objRange2 Is Nothing Then
+        Set MinusRange = objRange1
+        Exit Function
+    End If
+    
+    '除外する領域の数だけループ
+    '!Ｂ = !B1∩!B2∩!B3.....∩!Bn
+    Set objRounds = ReverseRange(objRange2.Areas(1))
+    For i = 2 To objRange2.Areas.Count
+        Set objRounds = IntersectRange(objRounds, ReverseRange(objRange2.Areas(i)))
+    Next
+    
+    'Ａ∩!Ｂ
+    Set MinusRange = IntersectRange(objRange1, objRounds)
+End Function
+
+'*****************************************************************************
+'[概要] 領域を反転する
+'[引数] 対象領域
+'[戻値] !objRange
+'*****************************************************************************
+Private Function ReverseRange(ByRef objRange As Range) As Range
+    Dim i As Long
+    Dim objRound(1 To 4) As Range
+    
+    With objRange.Parent
+        On Error Resume Next
+        '選択領域より上の領域すべて
+        Set objRound(1) = .Range(.Rows(1), _
+                                 .Rows(objRange.Row - 1))
+        '選択領域より下の領域すべて
+        Set objRound(2) = .Range(.Rows(objRange.Row + objRange.Rows.Count), _
+                                 .Rows(Rows.Count))
+        '選択領域より左の領域すべて
+        Set objRound(3) = .Range(.Columns(1), _
+                                 .Columns(objRange.Column - 1))
+        '選択領域より右の領域すべて
+        Set objRound(4) = .Range(.Columns(objRange.Column + objRange.Columns.Count), _
+                                 .Columns(Columns.Count))
+        On Error GoTo 0
+    End With
+    
+    '選択領域以外の領域を設定
+    For i = 1 To 4
+        Set ReverseRange = UnionRange(ReverseRange, objRound(i))
+    Next
+End Function
+
+'*****************************************************************************
+'[概要] 領域の重複を省いた領域を取得
+'[引数] 対象領域
+'[戻値] 領域の重複を省いた領域
+'*****************************************************************************
+Public Function ReSelectRange(ByRef objRange As Range) As Range
+    If objRange.Count = 1 Then
+        Set ReSelectRange = objRange
+        Exit Function
+    End If
+    
+    Dim objArrange(1 To 3) As Range
+    With objRange
+        On Error Resume Next
+        Set objArrange(1) = .SpecialCells(xlCellTypeConstants)
+        Set objArrange(2) = .SpecialCells(xlCellTypeFormulas)
+        Set objArrange(3) = .SpecialCells(xlCellTypeBlanks)
+        On Error GoTo 0
+    End With
+
+    Dim i As Long
+    For i = 1 To 3
+        Set ReSelectRange = UnionRange(ReSelectRange, objArrange(i))
+    Next
+End Function
+
+
+
