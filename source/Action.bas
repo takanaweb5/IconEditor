@@ -1,6 +1,7 @@
 Attribute VB_Name = "Action"
 Option Explicit
 
+Private Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
 Private Declare PtrSafe Function GetKeyState Lib "user32" (ByVal lngVirtKey As Long) As Integer
 Public FFormLoad As Boolean
 
@@ -78,10 +79,6 @@ On Error GoTo ErrHandle
     
     Dim img As New CImage
     Call img.LoadImageFromFile(vDBName)
-    If img.Width > 256 Or img.Height > 256 Then
-        Call MsgBox("幅または高さが256Pixelを超えるファイルは読み込めません")
-        Exit Sub
-    End If
     Application.ScreenUpdating = False
     Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
     Call img.SetPixelsToRange(ActiveCell)
@@ -107,8 +104,8 @@ On Error GoTo ErrHandle
         Call MsgBox("画像を選択してください")
         Exit Sub
     End If
-    If Selection.Rows.Count > 256 Or Selection.Columns.Count > 256 Then
-        Call MsgBox("幅または高さが256Pixelを超える画像は保存できません")
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
         Exit Sub
     End If
     
@@ -156,6 +153,11 @@ End Sub
 Public Sub 上下反転()
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    
     Dim img As New CImage
     Call img.GetPixelsFromRange(Selection)
     Call img.FlipHorizontal
@@ -176,6 +178,11 @@ End Sub
 Public Sub 左右反転()
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    
     Dim img As New CImage
     Call img.GetPixelsFromRange(Selection)
     Call img.FlipVertical
@@ -197,6 +204,10 @@ End Sub
 Public Sub 回転(ByVal lngMode As Long, ByVal lngAngle As Long)
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
     
     Dim objCopyRange As Range
     If lngMode = 1 Then
@@ -287,8 +298,13 @@ End Sub
 '*****************************************************************************
 Public Sub 画像に変換()
 On Error GoTo ErrHandle
-    Dim img As New CImage
     If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    
+    Dim img As New CImage
     Call img.GetPixelsFromRange(Selection)
     Call img.SaveImageToClipbord
 Exit Sub
@@ -419,9 +435,8 @@ End Function
 Public Sub 透明色強調()
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
-    
-    If Selection.Rows.Count > 256 Or Selection.Columns.Count > 256 Then
-        Call MsgBox("幅または高さが256マスを超える時は実行出来ません")
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
         Exit Sub
     End If
     
@@ -460,8 +475,8 @@ On Error GoTo ErrHandle
     If objCanvas Is Nothing Then
         Exit Sub
     Else
-        If objCanvas.Rows.Count > 256 Or objCanvas.Columns.Count > 256 Then
-            Call MsgBox("幅または高さが256マスを超える時は実行出来ません")
+        If objCanvas.Rows.Count = Rows.Count Or objCanvas.Columns.Count = Columns.Count Then
+            Call MsgBox("すべての行または列の選択時は実行出来ません")
             Exit Sub
         End If
     End If
@@ -490,6 +505,7 @@ On Error GoTo ErrHandle
             Call ColorToCell(objCell, DstColor)
         End If
     Next
+    Call Selection.Select
     Call SetOnUndo("色の置換")
 Exit Sub
 ErrHandle:
@@ -515,8 +531,8 @@ On Error GoTo ErrHandle
     If objCanvas Is Nothing Then
         Exit Sub
     Else
-        If objCanvas.Rows.Count > 256 Or objCanvas.Columns.Count > 256 Then
-            Call MsgBox("幅または高さが256マスを超える時は実行出来ません")
+        If objCanvas.Rows.Count = Rows.Count Or objCanvas.Columns.Count = Columns.Count Then
+            Call MsgBox("すべての行または列の選択時は実行出来ません")
             Exit Sub
         End If
     End If
@@ -620,11 +636,15 @@ End Sub
 Public Sub 貼付け()
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
     Dim objCopyRange  As Range
     Set objCopyRange = GetCopyRange()
     If objCopyRange Is Nothing Then Exit Sub
-    If objCopyRange.Rows.Count > 256 Or objCopyRange.Columns.Count > 256 Then
-        Call MsgBox("幅または高さが256マスを超える時は実行出来ません")
+    If objCopyRange.Rows.Count = Rows.Count Or objCopyRange.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
         Exit Sub
     End If
     
@@ -701,8 +721,8 @@ On Error GoTo ErrHandle
         Call MsgBox("RGBおよびアルファ値のいずれもチェックされていません")
         Exit Sub
     End If
-    If Selection.Rows.Count > 256 Or Selection.Columns.Count > 256 Then
-        Call MsgBox("幅または高さが256マスを超える時は実行出来ません")
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
         Exit Sub
     End If
 
@@ -724,6 +744,7 @@ On Error GoTo ErrHandle
         ARGB = AdjustColor(CellToColor(objCell), lngUp, FChecked(4), FChecked(5), FChecked(6), FChecked(7))
         Call ColorToCell(objCell, ARGB)
     Next
+    Call Selection.Select
     Call SetOnUndo("色調整")
 Exit Sub
 ErrHandle:
@@ -763,8 +784,8 @@ On Error GoTo ErrHandle
     If objCanvas Is Nothing Then
         Exit Sub
     Else
-        If objCanvas.Rows.Count > 256 Or objCanvas.Columns.Count > 256 Then
-            Call MsgBox("幅または高さが256マスを超える時は実行出来ません")
+        If objCanvas.Rows.Count = Rows.Count Or objCanvas.Columns.Count = Columns.Count Then
+            Call MsgBox("すべての行または列の選択時は実行出来ません")
             Exit Sub
         End If
     End If

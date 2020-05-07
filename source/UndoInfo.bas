@@ -13,7 +13,7 @@ Private FSelection As String  '選択領域のアドレス
 Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As String = "")
     If strCommand <> "" Then
         '色の調整コマンド等が連打されている時
-        If strCommand = Left(GetUndoStr(), Len(strCommand)) Then
+        If strCommand = GetUndoStr() Then
             If objSelection.Address(False, False) = FSelection Then
                 Exit Sub
             End If
@@ -26,7 +26,7 @@ Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As Stri
     Call ClearUndoSheet
     FSelection = objSelection.Address(False, False)
     Set FRange = GetCanvas(objSelection)
-    Call FRange.Copy(objSheet.Range(FRange.Address))
+    Call FRange.Parent.Cells.Copy(objSheet.Cells)
 End Sub
 
 '*****************************************************************************
@@ -86,9 +86,10 @@ On Error GoTo Finalization
     Call objSheet.Range(FRange.Address).Copy(FRange)
     Call FRange.Worksheet.Activate
     Call Range(FSelection).Select
-    Set FRange = Nothing
     Call ClearUndoSheet
 Finalization:
+    Set FRange = Nothing
+    FSelection = ""
     Application.DisplayAlerts = True
 End Sub
 
@@ -115,12 +116,12 @@ End Sub
 '[引数] なし
 '[戻値] UndoボタンのTooltipText
 '*****************************************************************************
-Public Function GetUndoStr() As String
+Private Function GetUndoStr() As String
     With CommandBars.FindControl(, 128) 'Undoボタン
         If .Enabled Then
             If .ListCount = 1 Then
                 'Undoが1種類の時のUndoコマンド
-                GetUndoStr = .TooltipText
+                GetUndoStr = Trim(.List(1))
             End If
         End If
     End With

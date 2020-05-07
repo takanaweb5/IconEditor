@@ -38,7 +38,7 @@ Public Function CellToColor(ByRef objCell As Range) As TRGBQuad
             If .Pattern = xlGray8 Then
                 strNumeric = Replace(objCell.Value, "$", "&H", 1, 1)
                 If IsNumeric(strNumeric) Then
-                    If 0 <= CInt(strNumeric) And CInt(strNumeric) <= 256 Then
+                    If 0 <= CInt(strNumeric) And CInt(strNumeric) <= 255 Then
                         'セルに入力された数値がアルファ値
                         Alpha = CInt(strNumeric)
                     End If
@@ -59,29 +59,14 @@ Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad)
         Select Case Color.Alpha
         Case 0   '透明
             .Pattern = xlGray8
-            .PatternColorIndex = xlAutomatic
-            .TintAndShade = 0
-            .PatternTintAndShade = 0
-            .ColorIndex = xlAutomatic
-            objCell.Value = ""
         Case 255 '不透明
-            .Pattern = xlSolid
-            .PatternColorIndex = xlAutomatic
-            .TintAndShade = 0
-            .PatternTintAndShade = 0
             .Color = ARGBToOleColor(Color)
-            objCell.Value = ""
         Case Else '半透明
+            .Color = ARGBToOleColor(Color)
             .Pattern = xlGray8
             .PatternColor = &HFFFFFF
-            .ColorIndex = xlAutomatic
-            .TintAndShade = 0
-            .PatternTintAndShade = 0
-            .Color = ARGBToOleColor(Color)
-            With objCell
-                .Value = Color.Alpha
-                .Font.Color = ARGBToOleColor(Color) '文字を背景色と同じにする
-            End With
+            objCell.Value = Color.Alpha
+            objCell.Font.Color = ARGBToOleColor(Color) '文字を背景色と同じにする
         End Select
     End With
 End Sub
@@ -186,12 +171,6 @@ End Function
 '*****************************************************************************
 Public Function CastARGB(ByRef ARGB As TRGBQuad) As Long
     Dim Color As TLong
-'    Dim RGB As TRGB
-'    With RGB
-'        .Red = ARGB.Red
-'        .Green = ARGB.Green
-'        .Blue = ARGB.Blue
-'    End With
     LSet Color = ARGB
     CastARGB = Color.Long
 End Function

@@ -201,6 +201,7 @@ Private Declare PtrSafe Function CloseHandle Lib "kernel32" (ByVal hObject As Lo
 Private Declare PtrSafe Function ReadFile Lib "kernel32" (ByVal hFile As LongPtr, ByRef Buffer As Any, ByVal nNumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As LongPtr) As Long
 Private Declare PtrSafe Function WriteFile Lib "kernel32" (ByVal hFile As LongPtr, ByRef Buffer As Any, ByVal nNumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As LongPtr) As Long
 Private Declare PtrSafe Function GetFileSize Lib "kernel32" (ByVal hFile As LongPtr, ByRef FileSizeHigh As Long) As Long
+Private Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
 
 Private Enum ImageLockMode
     ImageLockModeRead = 1
@@ -712,13 +713,31 @@ Public Sub SetPixelsToRange(ByVal objRange As Range, Optional Mode As Long = 0, 
         Color = CellToColor(objColorCell)
     End If
     
-    Dim lngWidth As Long
-    Dim lngHeight As Long
-    lngWidth = WorksheetFunction.Min(FWidth, MAXSIZE)
-    lngHeight = WorksheetFunction.Min(FHeight, MAXSIZE)
+    Dim StartTime As Long
+    StartTime = GetTickCount
+    
+    '初期化対象セルを設定
     Dim x As Long, y As Long
-    For x = 1 To lngWidth
-        For y = 1 To lngHeight
+    Dim objClearRange As Range
+    If Mode > 0 And blnTransparent = False Then
+        For x = 1 To FWidth
+            For y = 1 To FHeight
+                If SameColor(Color, FPixels(x, y)) = (Mode = 1) Then
+                    Set objClearRange = UnionRange(objClearRange, objRange.Cells(y, x))
+                End If
+            Next
+        Next
+    Else
+        Set objClearRange = objRange.Resize(FHeight, FWidth)
+    End If
+    '高速化のためいったん書式をクリア
+    With objClearRange
+        .Interior.Pattern = xlNone
+        .ClearContents
+    End With
+    
+    For x = 1 To FWidth
+        For y = 1 To FHeight
             Set objCell = objRange.Cells(y, x)
             Select Case Mode
             Case 0
@@ -735,40 +754,7 @@ Public Sub SetPixelsToRange(ByVal objRange As Range, Optional Mode As Long = 0, 
         Next
     Next
     
-    If FWidth <= MAXSIZE And FHeight <= MAXSIZE Then
-        Exit Sub
-    End If
-    
-    'サイズが大きすぎると時間がかかるので確認する
-    Application.ScreenUpdating = True
-    Dim strMsg As String
-    strMsg = "{MAX}Pixelを超えるイメージも表示しますか？" & vbCrLf & "元のサイズ：{幅} x {高さ} Pixel"
-    strMsg = Replace(strMsg, "{MAX}", MAXSIZE)
-    strMsg = Replace(strMsg, "{幅}", FWidth)
-    strMsg = Replace(strMsg, "{高さ}", FHeight)
-    If MsgBox(strMsg, vbYesNo) <> vbYes Then
-        Exit Sub
-    End If
-    Application.ScreenUpdating = False
-    For x = 1 To FWidth
-        For y = 1 To FHeight
-            If x > MAXSIZE Or y > MAXSIZE Then
-                Set objCell = objRange.Cells(y, x)
-                Select Case Mode
-                Case 0
-                    Call ColorToCell(objCell, FPixels(x, y))
-                Case 1, 2
-                    If SameColor(Color, FPixels(x, y)) = (Mode = 1) Then
-                        Call ColorToCell(objCell, FPixels(x, y))
-                    Else
-                        If blnTransparent Then
-                            Call ColorToCell(objCell, OleColorToARGB(&HFFFFFF, 0))
-                        End If
-                    End If
-                End Select
-            End If
-        Next
-    Next
+    Debug.Print GetTickCount - StartTime
 End Sub
 
 '*****************************************************************************
