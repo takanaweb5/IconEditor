@@ -101,6 +101,7 @@ On Error GoTo ErrHandle
         strRange = Application.ConvertFormula(.SubMatches(2), xlR1C1, xlA1)
         Set GetCopyRange = Workbooks(.SubMatches(0)).Worksheets(.SubMatches(1)).Range(strRange)
     End With
+    Application.CutCopyMode = False
     Exit Function
 ErrHandle:
     If hMem <> 0 Then Call CloseClipboard
@@ -268,4 +269,18 @@ Public Function ReSelectRange(ByRef objRange As Range) As Range
         Set ReSelectRange = UnionRange(ReSelectRange, objArrange(i))
     Next
 End Function
+
+'*****************************************************************************
+'[概要] セルの色をクリアする
+'[引数] 対象領域
+'[戻値] なし
+'*****************************************************************************
+Public Function ClearRange(ByRef objRange As Range)
+    With objRange
+        .Interior.Pattern = xlNone
+        .Font.Color = xlAutomatic
+        .ClearContents
+    End With
+End Function
+
 

@@ -1,7 +1,7 @@
 Attribute VB_Name = "Action"
 Option Explicit
 
-Private Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
+Public Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
 Private Declare PtrSafe Function GetKeyState Lib "user32" (ByVal lngVirtKey As Long) As Integer
 Public FFormLoad As Boolean
 
@@ -448,7 +448,7 @@ On Error GoTo ErrHandle
     Call SaveUndoInfo(Selection)
     Dim objCell As Range
     For Each objCell In objSelection
-        Call ColorToCell(objCell, CellToColor(objCell))
+        Call ColorToCell(objCell, CellToColor(objCell), True)
     Next
     Call SetOnUndo("透明色強調")
 Exit Sub
@@ -464,29 +464,28 @@ End Sub
 Public Sub 色の置換()
 On Error GoTo ErrHandle
     Dim objSelection As Range
-    If CheckSelection = E_Range Then
-        Set objSelection = Selection
-    Else
-        Set objSelection = ActiveCell
-    End If
-    
-    Dim objCanvas As Range
-    Set objCanvas = SelectCell("キャンバスの範囲を選択してください", objSelection)
-    If objCanvas Is Nothing Then
+    If CheckSelection <> E_Range Then
+        Call MsgBox("対象の範囲を選択してから実行してください")
         Exit Sub
-    Else
-        If objCanvas.Rows.Count = Rows.Count Or objCanvas.Columns.Count = Columns.Count Then
-            Call MsgBox("すべての行または列の選択時は実行出来ません")
-            Exit Sub
-        End If
     End If
-    '選択範囲の重複を排除
-    Set objCanvas = ReSelectRange(objCanvas)
+    Set objSelection = Selection
+    If objSelection.Rows.Count = Rows.Count Or objSelection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    If objSelection.Count = 1 Then
+        Call MsgBox("対象の範囲を選択してから実行してください")
+        Exit Sub
+    End If
     
     Dim objCell As Range
     Dim SrcColor As TRGBQuad
     Set objCell = SelectCell("置換前の色のセルを選択してください", ActiveCell)
     If objCell Is Nothing Then
+        Exit Sub
+    End If
+    If Intersect(objSelection, objCell) Is Nothing Then
+        Call MsgBox("セルが、対象範囲の内側にありません")
         Exit Sub
     End If
     SrcColor = CellToColor(objCell(1))
@@ -498,14 +497,22 @@ On Error GoTo ErrHandle
     End If
     DstColor = CellToColor(objCell(1))
     
-    Application.ScreenUpdating = False
-    Call SaveUndoInfo(Selection)
+    '選択範囲の重複を排除
+    Dim objCanvas As Range
+    Set objCanvas = ReSelectRange(objSelection)
+    
+    '置換対象セルを取得
+    Dim objRange As Range
     For Each objCell In objCanvas
         If SameColor(SrcColor, CellToColor(objCell)) Then
-            Call ColorToCell(objCell, DstColor)
+            Set objRange = UnionRange(objRange, objCell)
         End If
     Next
-    Call Selection.Select
+    If objRange Is Nothing Then Exit Sub
+    
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    Call ColorToCell(objRange, DstColor, True)
     Call SetOnUndo("色の置換")
 Exit Sub
 ErrHandle:
@@ -520,21 +527,18 @@ End Sub
 Public Sub 同色選択(ByVal blnSameColor As Boolean)
 On Error GoTo ErrHandle
     Dim objSelection As Range
-    Dim objCell As Range
-    If CheckSelection = E_Range Then
-        Set objSelection = Selection
-    Else
-        Set objSelection = ActiveCell
-    End If
-    Dim objCanvas As Range
-    Set objCanvas = SelectCell("キャンバスの範囲を選択してください", objSelection)
-    If objCanvas Is Nothing Then
+    If CheckSelection <> E_Range Then
+        Call MsgBox("対象の範囲を選択してから実行してください")
         Exit Sub
-    Else
-        If objCanvas.Rows.Count = Rows.Count Or objCanvas.Columns.Count = Columns.Count Then
-            Call MsgBox("すべての行または列の選択時は実行出来ません")
-            Exit Sub
-        End If
+    End If
+    Set objSelection = Selection
+    If objSelection.Rows.Count = Rows.Count Or objSelection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    If objSelection.Count = 1 Then
+        Call MsgBox("対象の範囲を選択してから実行してください")
+        Exit Sub
     End If
     
     Dim SelectColor  As TRGBQuad
@@ -544,11 +548,20 @@ On Error GoTo ErrHandle
     Else
         strMsg = "選択したくない色のセルを選択してください"
     End If
+    Dim objCell As Range
     Set objCell = SelectCell(strMsg, ActiveCell)
     If objCell Is Nothing Then
         Exit Sub
     End If
+    If Intersect(objSelection, objCell) Is Nothing Then
+        Call MsgBox("セルが、対象範囲の内側にありません")
+        Exit Sub
+    End If
     SelectColor = CellToColor(objCell(1))
+    
+    '選択範囲の重複を排除
+    Dim objCanvas As Range
+    Set objCanvas = ReSelectRange(objSelection)
     
     Dim objNewSelection As Range
     For Each objCell In objCanvas
@@ -650,43 +663,156 @@ On Error GoTo ErrHandle
     
     Dim objSelection As Range
     Set objSelection = Selection
-    Dim objColorCell As Range
-    Dim ColorFlg As Long
-    Dim lngMode As Long
+    Dim objCell As Range
+    Dim Color   As TRGBQuad
     If objCopyRange.Count > 1 Then
         If objSelection.Areas.Count > 1 Then
             Call MsgBox("このコマンドは複数の選択範囲に対して実行できません")
             Exit Sub
         End If
         If FChecked(1) Then
-            Set objColorCell = SelectCell("対象色のセルを選択してください", ActiveCell)
-            If objColorCell Is Nothing Then Exit Sub
-            lngMode = 1
+            Set objCell = SelectCell("対象色のセルを選択してください", ActiveCell)
+            If objCell Is Nothing Then Exit Sub
+            Color = CellToColor(objCell)
         End If
         If FChecked(2) Then
-            Set objColorCell = SelectCell("除外対象の色のセルを選択してください", ActiveCell)
-            If objColorCell Is Nothing Then Exit Sub
-            lngMode = 2
+            Set objCell = SelectCell("除外対象の色のセルを選択してください", ActiveCell)
+            If objCell Is Nothing Then Exit Sub
+            Color = CellToColor(objCell)
         End If
     End If
     
+    '貼付け先の領域
+    Dim objDestRange As Range
+    If objCopyRange.Count = 1 Then
+        Set objDestRange = objSelection
+    Else
+        Set objDestRange = objSelection.Resize(objCopyRange.Rows.Count, objCopyRange.Columns.Count)
+    End If
+    
     Application.ScreenUpdating = False
+    Call SaveUndoInfo(objDestRange)
     If objCopyRange.Count = 1 Then
         Dim DstColor As TRGBQuad
         DstColor = CellToColor(objCopyRange)
-        Call SaveUndoInfo(objSelection)
-        Dim objCell As Range
-        For Each objCell In objSelection
-            Call ColorToCell(objCell, DstColor)
-        Next
+        Call ColorToCell(objDestRange, DstColor, True)
     Else
-        Dim img As New CImage
-        Call img.GetPixelsFromRange(objCopyRange)
-        Call SaveUndoInfo(objSelection.Resize(img.Height, img.Width))
-        Call img.SetPixelsToRange(objSelection, lngMode, objColorCell, FChecked(3))
-        Call objSelection.Resize(img.Height, img.Width).Select
+        If FChecked(1) Or FChecked(2) Then
+            Dim objSameRange  As Range  '同じ色のセル
+            Dim objDiffRange  As Range  '違う色のセル
+            
+            '選択色と同じ色のセルを取得
+            Dim i As Long
+            For Each objCell In objCopyRange
+                i = i + 1
+                If SameColor(Color, CellToColor(objCell)) Then
+                    Set objSameRange = UnionRange(objSameRange, objDestRange(i))
+                End If
+            Next
+            '選択色と違う色のセルを取得
+            Set objDiffRange = MinusRange(objDestRange, objSameRange)
+            
+            '更新対象セルを高速化のたみにクリア
+            If Not FChecked(3) Then
+                '対象外のセルは更新しない時
+                If FChecked(1) Then
+                    '同じ色のセルをクリア
+                    Call ClearRange(objSameRange)
+                Else
+                    '違う色のセルをクリア
+                    Call ClearRange(objDiffRange)
+                End If
+            Else
+                '貼付け先領域全体をクリア
+                Call ClearRange(objDestRange)
+            End If
+            
+            '透明セルの設定
+            If FChecked(3) Then
+                If FChecked(1) Then
+                    '違う色のセルを透明化
+                    Call ColorToCell(objDiffRange, OleColorToARGB(&HFFFFFF, 0), False)
+                Else
+                    '同じ色のセルを透明化
+                    Call ColorToCell(objSameRange, OleColorToARGB(&HFFFFFF, 0), False)
+                End If
+            End If
+            
+            'カラーの設定
+            If FChecked(1) Then
+                '同じ色のセルを設定
+                Call ColorToCell(objSameRange, Color, False)
+            Else
+                '違う色のセルを設定
+                i = 0
+                For Each objCell In objCopyRange
+                    i = i + 1
+                    If Not SameColor(Color, CellToColor(objCell)) Then
+                        Call ColorToCell(objDestRange(i), Color, False)
+                    End If
+                Next
+            End If
+        Else
+            Dim img As New CImage
+            Call img.GetPixelsFromRange(objCopyRange)
+            Call SaveUndoInfo(objDestRange)
+            Call img.SetPixelsToRange(objSelection)
+        End If
     End If
+    Call objDestRange.Select
     Call SetOnUndo("貼付け")
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] 塗潰し
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 塗潰し()
+On Error GoTo ErrHandle
+    Dim objSelection As Range
+    If CheckSelection <> E_Range Then
+        Call MsgBox("対象の範囲を選択してから実行してください")
+        Exit Sub
+    End If
+    Set objSelection = Selection
+    If objSelection.Rows.Count = Rows.Count Or objSelection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    If objSelection.Count = 1 Or objSelection.Areas.Count > 1 Then
+        Call MsgBox("対象の範囲を選択してから実行してください")
+        Exit Sub
+    End If
+    
+    Dim objColorCell As Range
+    Set objColorCell = SelectCell("塗潰し色のセルを選択してください", ActiveCell)
+    If objColorCell Is Nothing Then
+        Exit Sub
+    End If
+    
+    Dim objStartCell As Range
+    Set objStartCell = SelectCell("塗潰し開始セルを選択してください", ActiveCell)
+    If objStartCell Is Nothing Then
+        Exit Sub
+    End If
+    If Intersect(objSelection, objStartCell) Is Nothing Then
+        Call MsgBox("セルが、対象範囲の内側にありません")
+        Exit Sub
+    End If
+    
+    Dim img As New CImage
+    Call img.GetPixelsFromRange(objSelection)
+    Call img.Fill(objStartCell.Column - objSelection.Column + 1, _
+                  objStartCell.Row - objSelection.Row + 1, _
+                  objColorCell)
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(objSelection)
+    Call img.SetPixelsToRange(objSelection)
+    Call SetOnUndo("塗潰し")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -707,7 +833,6 @@ ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Sub
 
-
 '*****************************************************************************
 '[概要] 色のARGBを増減させる
 '[引数] 1:増加、-1:減少
@@ -716,7 +841,7 @@ End Sub
 Public Sub 色増減(ByVal lngUp As Long)
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
-    If FChecked(3) Or FChecked(4) Or FChecked(5) Or FChecked(6) Or FChecked(7) Then
+    If FChecked(4) Or FChecked(5) Or FChecked(6) Or FChecked(7) Then
     Else
         Call MsgBox("RGBおよびアルファ値のいずれもチェックされていません")
         Exit Sub
@@ -727,10 +852,76 @@ On Error GoTo ErrHandle
     End If
 
     If GetKeyState(vbKeyControl) < 0 Then
-        lngUp = lngUp * 1
-    Else
-        lngUp = lngUp * 16
+        lngUp = lngUp * 10
     End If
+    
+    '選択範囲の重複を排除
+    Dim objSelection As Range
+    Set objSelection = ReSelectRange(Selection)
+    
+    'RGBαの増減値
+    Dim UpDown(1 To 4) As Long
+    If FChecked(4) Then
+        UpDown(1) = lngUp
+    End If
+    If FChecked(5) Then
+        UpDown(2) = lngUp
+    End If
+    If FChecked(6) Then
+        UpDown(3) = lngUp
+    End If
+    If FChecked(7) Then
+        UpDown(4) = lngUp
+    End If
+    
+    Dim objCell As Range
+    Dim ARGB As TRGBQuad
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection, "色調整")
+    For Each objCell In objSelection
+        ARGB = AdjustColor(CellToColor(objCell), UpDown(1), UpDown(2), UpDown(3), UpDown(4))
+        Call ColorToCell(objCell, ARGB, True)
+    Next
+    Call Selection.Select
+    Call SetOnUndo("色調整")
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] 色のAHSLの値を増減させる
+'[引数] 1:増加、-1:減少
+'[戻値] なし
+'*****************************************************************************
+Public Sub HSL増減(ByVal lngUp As Long, ByVal lngType As Long)
+On Error GoTo ErrHandle
+    If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+
+    '増減値
+    If GetKeyState(vbKeyControl) < 0 Then
+        lngUp = lngUp * 10
+    End If
+    
+    Dim H As Long
+    Dim S As Long
+    Dim L As Long
+    Dim strUndo As String
+    Select Case lngType
+    Case 1 '色相
+        H = lngUp
+        strUndo = "色彩"
+    Case 2 '彩度
+        S = lngUp
+        strUndo = "彩度"
+    Case 3 '明度
+        L = lngUp
+        strUndo = "明度"
+    End Select
     
     '選択範囲の重複を排除
     Dim objSelection As Range
@@ -739,13 +930,13 @@ On Error GoTo ErrHandle
     Dim objCell As Range
     Dim ARGB As TRGBQuad
     Application.ScreenUpdating = False
-    Call SaveUndoInfo(Selection, "色調整")
+    Call SaveUndoInfo(Selection, strUndo)
     For Each objCell In objSelection
-        ARGB = AdjustColor(CellToColor(objCell), lngUp, FChecked(4), FChecked(5), FChecked(6), FChecked(7))
-        Call ColorToCell(objCell, ARGB)
+        ARGB = UpDownHSL(CellToColor(objCell), H, S, L)
+        Call ColorToCell(objCell, ARGB, True)
     Next
     Call Selection.Select
-    Call SetOnUndo("色調整")
+    Call SetOnUndo(strUndo)
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -765,59 +956,4 @@ Exit Function
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Function
-
-'*****************************************************************************
-'[概要] 塗潰し
-'[引数] なし
-'[戻値] なし
-'*****************************************************************************
-Public Sub 塗潰し()
-On Error GoTo ErrHandle
-    Dim objSelection As Range
-    If CheckSelection = E_Range Then
-        Set objSelection = Selection.Areas(1)
-    Else
-        Set objSelection = ActiveCell
-    End If
-    Dim objCanvas As Range
-    Set objCanvas = SelectCell("キャンバスの範囲を選択してください", objSelection)
-    If objCanvas Is Nothing Then
-        Exit Sub
-    Else
-        If objCanvas.Rows.Count = Rows.Count Or objCanvas.Columns.Count = Columns.Count Then
-            Call MsgBox("すべての行または列の選択時は実行出来ません")
-            Exit Sub
-        End If
-    End If
-    
-    Dim objColorCell As Range
-    Set objColorCell = SelectCell("塗潰す色のセルを選択してください", ActiveCell)
-    If objColorCell Is Nothing Then
-        Exit Sub
-    End If
-    
-    Dim objStartCell As Range
-    Set objStartCell = SelectCell("塗潰し開始セルを選択してください", ActiveCell)
-    If objStartCell Is Nothing Then
-        Exit Sub
-    End If
-    
-    If Intersect(objCanvas, objStartCell) Is Nothing Then
-        Call MsgBox("塗潰し開始セルが、キャンバスの内側にありません")
-        Exit Sub
-    End If
-    
-    Dim img As New CImage
-    Call img.GetPixelsFromRange(objCanvas)
-    Call img.Fill(objStartCell.Column - objCanvas.Column + 1, _
-                  objStartCell.Row - objCanvas.Row + 1, _
-                  objColorCell)
-    Application.ScreenUpdating = False
-    Call SaveUndoInfo(objCanvas)
-    Call img.SetPixelsToRange(objCanvas)
-    Call SetOnUndo("塗潰し")
-Exit Sub
-ErrHandle:
-    Call MsgBox(Err.Description, vbExclamation)
-End Sub
 

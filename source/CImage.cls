@@ -557,7 +557,7 @@ Private Sub SetPixelsToImage(ByRef hGdiImage As LongPtr)
         .scan0 = VarPtr(FPixels(1, 1))
         .stride = FWidth * 4
     End With
-    
+
     If GdipBitmapLockBits(hGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeWrite, PixelFormat32bppARGB, BmpData) <> S_OK Then
         Call Err.Raise(513, "GdipBitmapLockBitsエラー")
     End If
@@ -701,56 +701,23 @@ End Sub
 
 '*****************************************************************************
 '[概要] FPixelsからCellに色を設定
-'[引数] 色を設定するセル，Mode 1:特定色を対象,2:特定色以外を対象
-'       特定色指定時のセル，対象外のセルを透明とするかどうか
+'[引数] 色を設定するセル
 '[戻値] なし
 '*****************************************************************************
-Public Sub SetPixelsToRange(ByVal objRange As Range, Optional Mode As Long = 0, Optional objColorCell As Range = Nothing, Optional blnTransparent As Boolean = False)
-    Const MAXSIZE = 64
+Public Sub SetPixelsToRange(ByVal objRange As Range)
     Dim objCell As Range
     Dim Color  As TRGBQuad
-    If Mode > 0 Then
-        Color = CellToColor(objColorCell)
-    End If
     
     Dim StartTime As Long
     StartTime = GetTickCount
     
-    '初期化対象セルを設定
-    Dim x As Long, y As Long
-    Dim objClearRange As Range
-    If Mode > 0 And blnTransparent = False Then
-        For x = 1 To FWidth
-            For y = 1 To FHeight
-                If SameColor(Color, FPixels(x, y)) = (Mode = 1) Then
-                    Set objClearRange = UnionRange(objClearRange, objRange.Cells(y, x))
-                End If
-            Next
-        Next
-    Else
-        Set objClearRange = objRange.Resize(FHeight, FWidth)
-    End If
     '高速化のためいったん書式をクリア
-    With objClearRange
-        .Interior.Pattern = xlNone
-        .ClearContents
-    End With
+    Call ClearRange(objRange)
     
+    Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
-            Set objCell = objRange.Cells(y, x)
-            Select Case Mode
-            Case 0
-                Call ColorToCell(objCell, FPixels(x, y))
-            Case 1, 2
-                If SameColor(Color, FPixels(x, y)) = (Mode = 1) Then
-                    Call ColorToCell(objCell, FPixels(x, y))
-                Else
-                    If blnTransparent Then
-                        Call ColorToCell(objCell, OleColorToARGB(&HFFFFFF, 0))
-                    End If
-                End If
-            End Select
+            Call ColorToCell(objRange.Cells(y, x), FPixels(x, y), False)
         Next
     Next
     

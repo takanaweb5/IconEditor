@@ -26,7 +26,18 @@ Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As Stri
     Call ClearUndoSheet
     FSelection = objSelection.Address(False, False)
     Set FRange = GetCanvas(objSelection)
-    Call FRange.Parent.Cells.Copy(objSheet.Cells)
+    '謎の例外を回避するためにUndoシートのコピー範囲を使用済にしておく
+    objSheet.Range(FRange.Address).Interior.ColorIndex = 0
+    
+    Dim blnCopyObjectsWithCells  As Boolean
+    blnCopyObjectsWithCells = Application.CopyObjectsWithCells
+On Error GoTo ErrHandle
+    '図形をコピーの対象外にする
+    Application.CopyObjectsWithCells = False
+    'Undoシートに変更範囲を保存
+    Call FRange.Copy(objSheet.Range(FRange.Address))
+ErrHandle:
+    Application.CopyObjectsWithCells = blnCopyObjectsWithCells
 End Sub
 
 '*****************************************************************************
@@ -46,20 +57,20 @@ Private Function GetCanvas(ByRef objSelection As Range) As Range
     For Each objArea In objSelection.Areas
         '領域ごとの一番左上のセル
         With objArea.Cells(1)
-            lngRow(1) = WorksheetFunction.Min(lngRow(1), .Row)
-            lngCol(1) = WorksheetFunction.Min(lngCol(1), .Column)
+            lngRow(1) = WorksheetFunction.min(lngRow(1), .Row)
+            lngCol(1) = WorksheetFunction.min(lngCol(1), .Column)
         End With
         '領域ごとの一番右下のセル
         With objArea.Cells(objArea.Cells.Count)
-            lngRow(2) = WorksheetFunction.MAX(lngRow(2), .Row)
-            lngCol(2) = WorksheetFunction.MAX(lngCol(2), .Column)
+            lngRow(2) = WorksheetFunction.max(lngRow(2), .Row)
+            lngCol(2) = WorksheetFunction.max(lngCol(2), .Column)
         End With
     Next
     
     Dim objCell(1 To 2) As Range
     Set objCell(1) = objSelection.Worksheet.Cells(lngRow(1), lngCol(1))
     Set objCell(2) = objSelection.Worksheet.Cells(lngRow(2), lngCol(2))
-    Set GetCanvas = Range(objCell(1), objCell(2))
+    Set GetCanvas = objSelection.Worksheet.Range(objCell(1), objCell(2))
 End Function
 
 '*****************************************************************************

@@ -29,32 +29,36 @@ Public Function CellToColor(ByRef objCell As Range) As TRGBQuad
     Dim strNumeric As String
     Dim Alpha As Byte
     With objCell.Interior
-        If .ColorIndex = xlColorIndexAutomatic Or .ColorIndex = xlColorIndexNone Then
+        Select Case .ColorIndex
+        Case xlNone, xlAutomatic
             '透明
             CellToColor = OleColorToARGB(&HFFFFFF, 0)
-        Else
+        Case Else
             Alpha = &HFF '不透明
-            '半透明
+            '半透明かどうか
             If .Pattern = xlGray8 Then
                 strNumeric = Replace(objCell.Value, "$", "&H", 1, 1)
                 If IsNumeric(strNumeric) Then
-                    If 0 <= CInt(strNumeric) And CInt(strNumeric) <= 255 Then
+                    If 0 <= CLng(strNumeric) And CLng(strNumeric) <= 255 Then
                         'セルに入力された数値がアルファ値
-                        Alpha = CInt(strNumeric)
+                        Alpha = CByte(strNumeric)
                     End If
                 End If
             End If
             CellToColor = OleColorToARGB(.Color, Alpha)
-        End If
+        End Select
     End With
 End Function
 
 '*****************************************************************************
 '[概要] Cellの色を設定する
-'[引数] 色を設定するセル，設定する色
+'[引数] 色を設定するセル，設定する色，初期化が必要かどうか
 '[戻値] なし
 '*****************************************************************************
-Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad)
+Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad, blnClear As Boolean)
+    If blnClear Then
+        Call ClearRange(objCell)
+    End If
     With objCell.Interior
         Select Case Color.Alpha
         Case 0   '透明
@@ -64,7 +68,7 @@ Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad)
         Case Else '半透明
             .Color = ARGBToOleColor(Color)
             .Pattern = xlGray8
-            .PatternColor = &HFFFFFF
+            .PatternColor = &HFFFFFF '白
             objCell.Value = Color.Alpha
             objCell.Font.Color = ARGBToOleColor(Color) '文字を背景色と同じにする
         End Select
@@ -128,39 +132,158 @@ End Function
 
 '*****************************************************************************
 '[概要] RGBおよびアルファ値を増減させる
-'[引数] SrcColor:変更前の色、lngUp:増加値(マイナスは減少値)、RGBαのいずれを増減の対象とするかどうか
+'[引数] SrcColor:変更前の色、RGBαのそれぞれの増減値
 '[戻値] 変更後の色
 '*****************************************************************************
-Public Function AdjustColor(ByRef SrcColor As TRGBQuad, ByVal lngUp As Long, ByVal blnRed As Boolean, ByVal blnGreen As Boolean, ByVal blnBlue As Boolean, ByVal blnAlpha As Boolean) As TRGBQuad
+Public Function AdjustColor(ByRef SrcColor As TRGBQuad, ByVal Red As Long, ByVal Green As Long, ByVal Blue As Long, ByVal Alpha As Long) As TRGBQuad
     AdjustColor = SrcColor
     With AdjustColor
-        If lngUp > 0 Then
-            If blnRed Then
-                .Red = WorksheetFunction.Min(255, SrcColor.Red + lngUp)
-            End If
-            If blnGreen Then
-                .Green = WorksheetFunction.Min(255, SrcColor.Green + lngUp)
-            End If
-            If blnBlue Then
-                .Blue = WorksheetFunction.Min(255, SrcColor.Blue + lngUp)
-            End If
-            If blnAlpha Then
-                .Alpha = WorksheetFunction.Min(255, SrcColor.Alpha + lngUp)
-            End If
+        If Red + Green + Blue + Alpha > 0 Then
+            '増加の時
+            .Red = WorksheetFunction.min(255, SrcColor.Red + Red)
+            .Green = WorksheetFunction.min(255, SrcColor.Green + Green)
+            .Blue = WorksheetFunction.min(255, SrcColor.Blue + Blue)
+            .Alpha = WorksheetFunction.min(255, SrcColor.Alpha + Alpha)
         Else
-            If blnRed Then
-                .Red = WorksheetFunction.MAX(0, SrcColor.Red + lngUp)
-            End If
-            If blnGreen Then
-                .Green = WorksheetFunction.MAX(0, SrcColor.Green + lngUp)
-            End If
-            If blnBlue Then
-                .Blue = WorksheetFunction.MAX(0, SrcColor.Blue + lngUp)
-            End If
-            If blnAlpha Then
-                .Alpha = WorksheetFunction.MAX(0, SrcColor.Alpha + lngUp)
-            End If
+            '減少の時
+            .Red = WorksheetFunction.max(0, SrcColor.Red + Red)
+            .Green = WorksheetFunction.max(0, SrcColor.Green + Green)
+            .Blue = WorksheetFunction.max(0, SrcColor.Blue + Blue)
+            .Alpha = WorksheetFunction.max(0, SrcColor.Alpha + Alpha)
         End If
+    End With
+End Function
+
+'*****************************************************************************
+'[概要] 色のHSLを増減させる
+'[引数] SrcColor:変更前の色、HSLのそれぞれの増減値
+'[戻値] 変更後の色
+'*****************************************************************************
+Public Function UpDownHSL(ByRef SrcColor As TRGBQuad, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long) As TRGBQuad
+    Dim H As Double '0～360
+    Dim S As Double '0～255
+    Dim L As Double '0～255
+        
+    Call RGBToHSL(SrcColor, H, S, L)
+    If Hue + Saturation + Lightness > 0 Then
+        '増加の時
+        H = H + Hue
+        S = WorksheetFunction.min(255, S + Saturation)
+        L = WorksheetFunction.min(255, L + Lightness)
+    Else
+        '減少の時
+        H = H + Hue
+        S = WorksheetFunction.max(0, S + Saturation)
+        L = WorksheetFunction.max(0, L + Lightness)
+    End If
+    UpDownHSL = HSLToRGB(H, S, L)
+    UpDownHSL.Alpha = SrcColor.Alpha
+End Function
+
+'*****************************************************************************
+'[概要] RGBをHSLに変換する
+'[引数] SrcColor:変更前の色, 計算結果：H:0～360,S:0～255,L:0～255
+'[戻値] 変換後のHSL(ただし引数)
+'*****************************************************************************
+Private Sub RGBToHSL(ByRef SrcColor As TRGBQuad, ByRef H As Double, ByRef S As Double, ByRef L As Double)
+    Dim R As Long '0～255
+    Dim G As Long '0～255
+    Dim B As Long '0～255
+    With SrcColor
+        R = .Red
+        G = .Green
+        B = .Blue
+    End With
+    
+    Dim max As Long
+    Dim min As Long
+    max = WorksheetFunction.max(R, G, B)
+    min = WorksheetFunction.min(R, G, B)
+    
+    'L(明度)
+    L = (max + min) / 2
+    
+    'H(色相)
+    If max <> min Then
+        If max = R Then
+            H = 60 * (G - B) / (max - min)
+        End If
+        If max = G Then
+            H = 60 * (B - R) / (max - min) + 120
+        End If
+        If max = B Then
+            H = 60 * (R - G) / (max - min) + 240
+        End If
+        If H < 0 Then
+            H = H + 360
+        End If
+    End If
+     
+    'S(彩度)
+    If max <> min Then
+        If L <= 127 Then
+          S = (max - min) / (max + min)
+        Else
+          S = (max - min) / (510 - max - min)
+        End If
+        S = S * 255
+    End If
+End Sub
+
+'*****************************************************************************
+'[概要] HSLをRGBに変換する
+'[引数] H:0～360,S:0～255,L:0～255
+'[戻値] RGB
+'*****************************************************************************
+Private Function HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Double) As TRGBQuad
+    Dim max As Double
+    Dim min As Double
+    If L <= 127 Then
+      max = L + L * (S / 255)
+      min = L - L * (S / 255)
+    Else
+      max = (L + (255 - L) * (S / 255))
+      min = (L - (255 - L) * (S / 255))
+    End If
+
+    Dim R As Double '0～255
+    Dim G As Double '0～255
+    Dim B As Double '0～255
+    If H < 0 Then
+        H = H + 360
+    End If
+    If H >= 360 Then
+        H = H - 360
+    End If
+    If H < 60 Then
+        R = max
+        G = min + (max - min) * (H / 60)
+        B = min
+    ElseIf 60 <= H And H < 120 Then
+        R = min + (max - min) * ((120 - H) / 60)
+        G = max
+        B = min
+    ElseIf 120 <= H And H < 180 Then
+        R = min
+        G = max
+        B = min + (max - min) * ((H - 120) / 60)
+    ElseIf 180 <= H And H < 240 Then
+        R = min
+        G = min + (max - min) * ((240 - H) / 60)
+        B = max
+    ElseIf 240 <= H And H < 300 Then
+        R = min + (max - min) * ((H - 240) / 60)
+        G = min
+        B = max
+    ElseIf 300 <= H And H < 360 Then
+        R = max
+        G = min
+        B = min + (max - min) * ((360 - H) / 60)
+    End If
+    With HSLToRGB
+        .Red = Round(R)
+        .Green = Round(G)
+        .Blue = Round(B)
     End With
 End Function
 
