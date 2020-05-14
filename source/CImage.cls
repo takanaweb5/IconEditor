@@ -712,7 +712,7 @@ Public Sub SetPixelsToRange(ByVal objRange As Range)
     StartTime = GetTickCount
     
     '‚‘¬‰»‚Ì‚½‚ß‚¢‚Á‚½‚ñ‘®‚ğƒNƒŠƒA
-    Call ClearRange(objRange)
+    Call ClearRange(objRange.Resize(FHeight, FWidth))
     
     Dim x As Long, y As Long
     For x = 1 To FWidth

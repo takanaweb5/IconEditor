@@ -152,7 +152,7 @@ End Sub
 '*****************************************************************************
 Sub getSize(control As IRibbonControl, ByRef returnedVal)
     Select Case Mid(control.ID, 2)
-    Case 11, 21, 61, 62, 63, 71
+    Case 11, 21, 37, 61, 62, 63, 71
         returnedVal = 1
     Case Else
         returnedVal = 0
@@ -214,11 +214,11 @@ Private Function GetTips(control As IRibbonControl, ByVal lngType As Long) As St
     Case 11
         Result(1) = "ImageMso"
         Result(2) = "ImageMsoから画像を取得"
-        Result(3) = "ImageMsoを指定して選択されたセルの位置へ画像を読み込みます"
+        Result(3) = "ImageMsoを指定して選択されたセル範囲へ画像を読み込みます" & vbCrLf & "単一セルの選択時はサイズを指定するダイアログが表示されます"
     Case 12
         Result(1) = "読込"
         Result(2) = "画像の読込"
-        Result(3) = "選択されたセルの位置へ画像を読込みます"
+        Result(3) = "選択されたセル範囲へ画像を読み込みます" & vbCrLf & "単一セルの選択時は元の画像のサイズで読み込みます"
     Case 13
         Result(1) = "一括読込"
         Result(2) = "画像の一括読込み"
@@ -242,7 +242,7 @@ Private Function GetTips(control As IRibbonControl, ByVal lngType As Long) As St
     Case 22
         Result(1) = "画像を貼付"
         Result(2) = "画像を貼付け"
-        Result(3) = "クリップボードの画像を貼付けます"
+        Result(3) = "クリップボードの画像を選択されたセル範囲へ貼付けます" & vbCrLf & "単一セルの選択時は元の画像のサイズで貼付けます"
     Case 23
         Result(1) = "Shapeを貼付"
         Result(2) = "Shapeを貼付け"
@@ -278,7 +278,11 @@ Private Function GetTips(control As IRibbonControl, ByVal lngType As Long) As St
     Case 36
         Result(1) = "塗潰し"
         Result(2) = "塗潰し"
-        Result(3) = "選択されたセルの範囲を対象に塗潰します"
+        Result(3) = "選択されたセル範囲を対象に塗潰します"
+    Case 37
+        Result(1) = "クリア"
+        Result(2) = "クリア"
+        Result(3) = "選択されたセル範囲の色をクリアします"
     
     Case 41
         Result(1) = "同じ色"
@@ -412,6 +416,8 @@ Private Sub GetImages(control As IRibbonControl, ByRef Result)
         strImage = "ObjectRotateLeft90"
     Case 35
         Set objImage = Getイメージ(Range("Icons!BP35:CU66"))
+    Case 37
+        strImage = "ViewGridlines"
     Case 36
 '        strImage = "FillStyle"
         Set objImage = Getイメージ(Range("Icons!CW35:EB66"))
@@ -513,6 +519,8 @@ Sub onAction(control As IRibbonControl)
         Call 色の置換
     Case 36
         Call 塗潰し
+    Case 37
+        Call クリア
     Case 41
         Call 同色選択(True)
     Case 42

@@ -56,6 +56,7 @@ End Function
 '[–ß’l] ‚È‚µ
 '*****************************************************************************
 Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad, blnClear As Boolean)
+    If objCell Is Nothing Then Exit Sub
     If blnClear Then
         Call ClearRange(objCell)
     End If

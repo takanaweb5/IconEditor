@@ -276,6 +276,7 @@ End Function
 '[–ß’l] ‚È‚µ
 '*****************************************************************************
 Public Function ClearRange(ByRef objRange As Range)
+    If objRange Is Nothing Then Exit Function
     With objRange
         .Interior.Pattern = xlNone
         .Font.Color = xlAutomatic

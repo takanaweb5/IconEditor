@@ -6,6 +6,23 @@ Private Declare PtrSafe Function GetKeyState Lib "user32" (ByVal lngVirtKey As L
 Public FFormLoad As Boolean
 
 '*****************************************************************************
+'[概要] クリア
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub クリア()
+On Error GoTo ErrHandle
+    If CheckSelection <> E_Range Then Exit Sub
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    Call ColorToCell(Selection, OleColorToARGB(0, 0), True)
+    Call SetOnUndo("クリア")
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
 '[概要] ImageMsoを取得
 '[引数] なし
 '[戻値] なし
@@ -15,6 +32,8 @@ Public Sub ImageMso取得()
         Call MsgBox("画像を読込むセルを選択してください", vbCritical)
         Exit Sub
     End If
+    Dim objSelection As Range
+    Set objSelection = Selection
     
     Dim strImgMso As String
     strImgMso = InputBox("ImageMsoを入力してください" & vbCrLf & vbCrLf & "例 Copy")
@@ -28,32 +47,40 @@ Public Sub ImageMso取得()
         Exit Sub
     End If
     
-    Dim WidthAndHeight As Variant
-    Dim strInput As String
     Dim lngWidth As Long
     Dim lngHeight As Long
-    Do While True
-        strInput = InputBox("幅,高さを入力してください" & vbCrLf & vbCrLf & "例 32,32", , "32,32")
-        If strInput = "" Then
-            Exit Sub
-        End If
-        WidthAndHeight = Split(strInput, ",")
-        If UBound(WidthAndHeight) = 1 Then
-            If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
-                lngWidth = WidthAndHeight(0)
-                lngHeight = WidthAndHeight(1)
-                Exit Do
+    Dim DestRange As Range
+    If 1 < objSelection.Columns.Count And objSelection.Columns.Count <= 64 And _
+       1 < objSelection.Rows.Count And objSelection.Rows.Count <= 64 Then
+        lngWidth = objSelection.Columns.Count
+        lngHeight = objSelection.Rows.Count
+        Set DestRange = objSelection
+    Else
+        Dim WidthAndHeight As Variant
+        Dim strInput As String
+        Do While True
+            strInput = InputBox("幅,高さを入力してください" & vbCrLf & vbCrLf & "例 32,32", , "32,32")
+            If strInput = "" Then
+                Exit Sub
             End If
-        End If
-    Loop
-    
+            WidthAndHeight = Split(strInput, ",")
+            If UBound(WidthAndHeight) = 1 Then
+                If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
+                    lngWidth = WidthAndHeight(0)
+                    lngHeight = WidthAndHeight(1)
+                    Exit Do
+                End If
+            End If
+        Loop
+        Set DestRange = ActiveCell.Resize(lngHeight, lngWidth)
+    End If
 On Error GoTo ErrHandle
     Dim img As New CImage
     Call img.GetPixelsFromHBITMAP(CommandBars.GetImageMso(strImgMso, lngWidth, lngHeight).Handle)
     Application.ScreenUpdating = False
-    Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
-    Call img.SetPixelsToRange(ActiveCell)
-    Call ActiveCell.Resize(img.Height, img.Width).Select
+    Call SaveUndoInfo(DestRange)
+    Call img.SetPixelsToRange(DestRange)
+    Call DestRange.Select
     Call SetOnUndo("ImageMso取得")
 Exit Sub
 ErrHandle:
@@ -71,18 +98,45 @@ On Error GoTo ErrHandle
         Call MsgBox("画像を読込むセルを選択してください")
         Exit Sub
     End If
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    Dim objSelection As Range
+    Set objSelection = Selection
+    
     Dim vDBName As Variant
     vDBName = Application.GetOpenFilename("PNG,*.png,アイコン,*.ico,ビットマップ,*.bmp,全てのファイル,*.*")
     If vDBName = False Then
         Exit Sub
     End If
     
+    Dim lngWidth As Long
+    Dim lngHeight As Long
+    Dim DestRange As Range
+    If 1 < objSelection.Columns.Count And _
+       1 < objSelection.Rows.Count Then
+        lngWidth = objSelection.Columns.Count
+        lngHeight = objSelection.Rows.Count
+        Set DestRange = objSelection
+    End If
+    
     Dim img As New CImage
     Call img.LoadImageFromFile(vDBName)
+    If DestRange Is Nothing Then
+        Set DestRange = ActiveCell.Resize(img.Height, img.Width)
+    Else
+        If lngWidth > img.Width Or lngHeight > img.Height Then
+            Set DestRange = DestRange.Resize(img.Height, img.Width)
+        Else
+            Call img.Resize(lngWidth, lngHeight)
+        End If
+    End If
+    
     Application.ScreenUpdating = False
-    Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
-    Call img.SetPixelsToRange(ActiveCell)
-    Call ActiveCell.Resize(img.Height, img.Width).Select
+    Call SaveUndoInfo(DestRange)
+    Call img.SetPixelsToRange(DestRange)
+    Call DestRange.Select
     Call SetOnUndo("画像読込")
 Exit Sub
 ErrHandle:
@@ -253,38 +307,39 @@ On Error GoTo ErrHandle
         Call MsgBox("画像を読込むセルを選択してください")
         Exit Sub
     End If
-    
-    Dim img As New CImage
-    Call img.LoadBMPFromClipbord
-    Dim strDefault As String
-    strDefault = img.Width & "," & img.Height
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    Dim objSelection As Range
+    Set objSelection = Selection
     
     Dim lngWidth As Long
     Dim lngHeight As Long
-    Dim WidthAndHeight As Variant
-    Dim strInput As String
-    Dim objSelection
-    Set objSelection = Selection
-    Do While True
-        strInput = InputBox("幅,高さを入力してください", , strDefault)
-        If strInput = "" Then
-            Exit Sub
-        End If
-        WidthAndHeight = Split(strInput, ",")
-        If UBound(WidthAndHeight) = 1 Then
-            If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
-                lngWidth = WidthAndHeight(0)
-                lngHeight = WidthAndHeight(1)
-                Exit Do
-            End If
-        End If
-    Loop
+    Dim DestRange As Range
+    If 1 < objSelection.Columns.Count And _
+       1 < objSelection.Rows.Count Then
+        lngWidth = objSelection.Columns.Count
+        lngHeight = objSelection.Rows.Count
+        Set DestRange = objSelection
+    End If
     
-    Call img.Resize(lngWidth, lngHeight)
+    Dim img As New CImage
+    Call img.LoadBMPFromClipbord
+    If DestRange Is Nothing Then
+        Set DestRange = ActiveCell.Resize(img.Height, img.Width)
+    Else
+        If lngWidth > img.Width Or lngHeight > img.Height Then
+            Set DestRange = DestRange.Resize(img.Height, img.Width)
+        Else
+            Call img.Resize(lngWidth, lngHeight)
+        End If
+    End If
+    
     Application.ScreenUpdating = False
-    Call SaveUndoInfo(ActiveCell.Resize(img.Height, img.Width))
-    Call img.SetPixelsToRange(Selection)
-    Call ActiveCell.Resize(img.Height, img.Width).Select
+    Call SaveUndoInfo(DestRange)
+    Call img.SetPixelsToRange(DestRange)
+    Call DestRange.Select
     Call SetOnUndo("画像読込")
 Exit Sub
 ErrHandle:
@@ -326,33 +381,39 @@ On Error GoTo ErrHandle
     Dim objSelection
     Set objSelection = Selection
     
-    Dim objCell As Range
+    Dim DestRange As Range
     Call ActiveCell.Select
-    Set objCell = SelectCell("画像を読込むセルを選択してください", ActiveCell)
-    If objCell Is Nothing Then
+    Set DestRange = SelectCell("画像を読込むセルを選択してください", ActiveCell)
+    If DestRange Is Nothing Then
         Exit Sub
     End If
     
     Dim lngWidth As Long
     Dim lngHeight As Long
-    Dim WidthAndHeight As Variant
-    Dim strInput As String
-    Do While True
-        strInput = InputBox("幅,高さを" & MAX_WIDTH & "Pixel未満で入力してください")
-        If strInput = "" Then
-            Exit Do
-        End If
-        WidthAndHeight = Split(strInput, ",")
-        If UBound(WidthAndHeight) = 1 Then
-            If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
-                lngWidth = WidthAndHeight(0)
-                lngHeight = WidthAndHeight(1)
-                If lngWidth <= MAX_WIDTH And lngHeight <= MAX_HEIGHT Then
+    If 1 < DestRange.Columns.Count And DestRange.Columns.Count <= 64 And _
+       1 < DestRange.Rows.Count And DestRange.Rows.Count <= 64 Then
+        lngWidth = DestRange.Columns.Count
+        lngHeight = DestRange.Rows.Count
+    Else
+        Dim WidthAndHeight As Variant
+        Dim strInput As String
+        Do While True
+            strInput = InputBox("幅,高さを入力してください" & vbCrLf & vbCrLf & "例 32,32", , "32,32")
+            If strInput = "" Then
+                Exit Sub
+            End If
+            WidthAndHeight = Split(strInput, ",")
+            If UBound(WidthAndHeight) = 1 Then
+                If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
+                    lngWidth = WidthAndHeight(0)
+                    lngHeight = WidthAndHeight(1)
                     Exit Do
                 End If
             End If
-        End If
-    Loop
+        Loop
+        Set DestRange = DestRange.Resize(lngHeight, lngWidth)
+    End If
+    
     Dim objWkShape As Shape
     Set objWkShape = GroupShape(objSelection.ShapeRange(1))
     
@@ -365,9 +426,9 @@ On Error GoTo ErrHandle
     Call img.LoadBMPFromClipbord
     Call img.Resize(lngWidth, lngHeight)
     Application.ScreenUpdating = False
-    Call SaveUndoInfo(objCell.Resize(img.Height, img.Width))
-    Call img.SetPixelsToRange(objCell)
-    Call objCell.Resize(img.Height, img.Width).Select
+    Call SaveUndoInfo(DestRange)
+    Call img.SetPixelsToRange(DestRange)
+    Call DestRange.Select
     If Not (objWkShape Is Nothing) Then
         Call objWkShape.Delete
     End If
@@ -673,11 +734,19 @@ On Error GoTo ErrHandle
         If FChecked(1) Then
             Set objCell = SelectCell("対象色のセルを選択してください", ActiveCell)
             If objCell Is Nothing Then Exit Sub
+            If Intersect(objCopyRange, objCell) Is Nothing Then
+                Call MsgBox("セルが、対象範囲の内側にありません")
+                Exit Sub
+            End If
             Color = CellToColor(objCell)
         End If
         If FChecked(2) Then
             Set objCell = SelectCell("除外対象の色のセルを選択してください", ActiveCell)
             If objCell Is Nothing Then Exit Sub
+            If Intersect(objCopyRange, objCell) Is Nothing Then
+                Call MsgBox("セルが、対象範囲の内側にありません")
+                Exit Sub
+            End If
             Color = CellToColor(objCell)
         End If
     End If
@@ -698,65 +767,11 @@ On Error GoTo ErrHandle
         Call ColorToCell(objDestRange, DstColor, True)
     Else
         If FChecked(1) Or FChecked(2) Then
-            Dim objSameRange  As Range  '同じ色のセル
-            Dim objDiffRange  As Range  '違う色のセル
-            
-            '選択色と同じ色のセルを取得
-            Dim i As Long
-            For Each objCell In objCopyRange
-                i = i + 1
-                If SameColor(Color, CellToColor(objCell)) Then
-                    Set objSameRange = UnionRange(objSameRange, objDestRange(i))
-                End If
-            Next
-            '選択色と違う色のセルを取得
-            Set objDiffRange = MinusRange(objDestRange, objSameRange)
-            
-            '更新対象セルを高速化のたみにクリア
-            If Not FChecked(3) Then
-                '対象外のセルは更新しない時
-                If FChecked(1) Then
-                    '同じ色のセルをクリア
-                    Call ClearRange(objSameRange)
-                Else
-                    '違う色のセルをクリア
-                    Call ClearRange(objDiffRange)
-                End If
-            Else
-                '貼付け先領域全体をクリア
-                Call ClearRange(objDestRange)
-            End If
-            
-            '透明セルの設定
-            If FChecked(3) Then
-                If FChecked(1) Then
-                    '違う色のセルを透明化
-                    Call ColorToCell(objDiffRange, OleColorToARGB(&HFFFFFF, 0), False)
-                Else
-                    '同じ色のセルを透明化
-                    Call ColorToCell(objSameRange, OleColorToARGB(&HFFFFFF, 0), False)
-                End If
-            End If
-            
-            'カラーの設定
-            If FChecked(1) Then
-                '同じ色のセルを設定
-                Call ColorToCell(objSameRange, Color, False)
-            Else
-                '違う色のセルを設定
-                i = 0
-                For Each objCell In objCopyRange
-                    i = i + 1
-                    If Not SameColor(Color, CellToColor(objCell)) Then
-                        Call ColorToCell(objDestRange(i), Color, False)
-                    End If
-                Next
-            End If
+            Call PasteSub(Color, objCopyRange, objDestRange)
         Else
             Dim img As New CImage
             Call img.GetPixelsFromRange(objCopyRange)
-            Call SaveUndoInfo(objDestRange)
-            Call img.SetPixelsToRange(objSelection)
+            Call img.SetPixelsToRange(objDestRange)
         End If
     End If
     Call objDestRange.Select
@@ -765,6 +780,71 @@ Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Sub
+
+
+'*****************************************************************************
+'[概要] 特定の色だけ または 特定の色を除く貼付け
+'[引数] 対象または対象外とする色,Copy元のRange,貼付け先のRange
+'[戻値] なし
+'*****************************************************************************
+Private Sub PasteSub(ByRef Color As TRGBQuad, ByRef objCopyRange As Range, ByRef objDestRange As Range)
+    Dim objSameRange  As Range  '同じ色のセル
+    Dim objDiffRange  As Range  '違う色のセル
+    Dim objCell As Range
+    
+    '選択色と同じ色のセルと違う色のセルを取得
+    Dim i As Long
+    For Each objCell In objCopyRange
+        i = i + 1
+        If SameColor(Color, CellToColor(objCell)) Then
+            Set objSameRange = UnionRange(objSameRange, objDestRange(i))
+        Else
+            Set objDiffRange = UnionRange(objDiffRange, objDestRange(i))
+        End If
+    Next
+    
+    '更新対象セルを高速化のためにクリア
+    If FChecked(3) Then
+        '貼付け先領域全体をクリア
+        Call ClearRange(objDestRange)
+    Else
+        '対象外のセルは更新しない時
+        If FChecked(1) Then
+            '同じ色のセルをクリア
+            Call ClearRange(objSameRange)
+        Else
+            '違う色のセルをクリア
+            Call ClearRange(objDiffRange)
+        End If
+    End If
+    
+    '透明セルの設定
+    If FChecked(3) Then
+        If FChecked(1) Then
+            '違う色のセルを透明化
+            Call ColorToCell(objDiffRange, OleColorToARGB(&HFFFFFF, 0), False)
+        Else
+            '同じ色のセルを透明化
+            Call ColorToCell(objSameRange, OleColorToARGB(&HFFFFFF, 0), False)
+        End If
+    End If
+    
+    'カラーの設定
+    If FChecked(1) Then
+        '同じ色のセルを設定
+        Call ColorToCell(objSameRange, Color, False)
+    Else
+        '違う色のセルを設定
+        i = 0
+        For Each objCell In objCopyRange
+            i = i + 1
+            If Not SameColor(Color, CellToColor(objCell)) Then
+                Call ColorToCell(objDestRange(i), CellToColor(objCell), False)
+            End If
+        Next
+    End If
+End Sub
+
 
 '*****************************************************************************
 '[概要] 塗潰し
@@ -788,12 +868,6 @@ On Error GoTo ErrHandle
         Exit Sub
     End If
     
-    Dim objColorCell As Range
-    Set objColorCell = SelectCell("塗潰し色のセルを選択してください", ActiveCell)
-    If objColorCell Is Nothing Then
-        Exit Sub
-    End If
-    
     Dim objStartCell As Range
     Set objStartCell = SelectCell("塗潰し開始セルを選択してください", ActiveCell)
     If objStartCell Is Nothing Then
@@ -801,6 +875,12 @@ On Error GoTo ErrHandle
     End If
     If Intersect(objSelection, objStartCell) Is Nothing Then
         Call MsgBox("セルが、対象範囲の内側にありません")
+        Exit Sub
+    End If
+    
+    Dim objColorCell As Range
+    Set objColorCell = SelectCell("塗潰し色のセルを選択してください", ActiveCell)
+    If objColorCell Is Nothing Then
         Exit Sub
     End If
     
