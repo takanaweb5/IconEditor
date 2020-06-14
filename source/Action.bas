@@ -1,5 +1,6 @@
 Attribute VB_Name = "Action"
 Option Explicit
+Option Private Module
 
 Public Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
 Private Declare PtrSafe Function GetKeyState Lib "user32" (ByVal lngVirtKey As Long) As Integer
@@ -15,7 +16,8 @@ On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
     Application.ScreenUpdating = False
     Call SaveUndoInfo(Selection)
-    Call ColorToCell(Selection, OleColorToARGB(0, 0), True)
+    Call ClearRange(Selection)
+'    Call ColorToCell(Selection, OleColorToARGB(0, 0), True)
     Call SetOnUndo("クリア")
 Exit Sub
 ErrHandle:
@@ -74,6 +76,13 @@ Public Sub ImageMso取得()
         Loop
         Set DestRange = ActiveCell.Resize(lngHeight, lngWidth)
     End If
+    If 16 <= lngWidth And lngWidth <= 64 And _
+       16 <= lngHeight And lngHeight <= 64 Then
+    Else
+        Call MsgBox("幅および高さは 16～64 で指定してください")
+        Exit Sub
+    End If
+
 On Error GoTo ErrHandle
     Dim img As New CImage
     Call img.GetPixelsFromHBITMAP(CommandBars.GetImageMso(strImgMso, lngWidth, lngHeight).Handle)
@@ -614,10 +623,10 @@ On Error GoTo ErrHandle
     If objCell Is Nothing Then
         Exit Sub
     End If
-    If Intersect(objSelection, objCell) Is Nothing Then
-        Call MsgBox("セルが、対象範囲の内側にありません")
-        Exit Sub
-    End If
+'    If Intersect(objSelection, objCell) Is Nothing Then
+'        Call MsgBox("セルが、対象範囲の内側にありません")
+'        Exit Sub
+'    End If
     SelectColor = CellToColor(objCell(1))
     
     '選択範囲の重複を排除
@@ -692,7 +701,7 @@ On Error GoTo ErrHandle
     End Select
     
     If Not (objRange Is Nothing) Then
-        Call objRange.Select
+        Call ReSelectRange(objRange).Select
     End If
 ErrHandle:
     strLastSheet = ActiveSheet.Name
@@ -731,7 +740,7 @@ On Error GoTo ErrHandle
             Call MsgBox("このコマンドは複数の選択範囲に対して実行できません")
             Exit Sub
         End If
-        If FChecked(1) Then
+        If GetTmpControl("C1").State Then
             Set objCell = SelectCell("対象色のセルを選択してください", ActiveCell)
             If objCell Is Nothing Then Exit Sub
             If Intersect(objCopyRange, objCell) Is Nothing Then
@@ -740,7 +749,7 @@ On Error GoTo ErrHandle
             End If
             Color = CellToColor(objCell)
         End If
-        If FChecked(2) Then
+        If GetTmpControl("C2").State Then
             Set objCell = SelectCell("除外対象の色のセルを選択してください", ActiveCell)
             If objCell Is Nothing Then Exit Sub
             If Intersect(objCopyRange, objCell) Is Nothing Then
@@ -766,7 +775,7 @@ On Error GoTo ErrHandle
         DstColor = CellToColor(objCopyRange)
         Call ColorToCell(objDestRange, DstColor, True)
     Else
-        If FChecked(1) Or FChecked(2) Then
+        If GetTmpControl("C1").State Or GetTmpControl("C2").State Then
             Call PasteSub(Color, objCopyRange, objDestRange)
         Else
             Dim img As New CImage
@@ -804,12 +813,12 @@ Private Sub PasteSub(ByRef Color As TRGBQuad, ByRef objCopyRange As Range, ByRef
     Next
     
     '更新対象セルを高速化のためにクリア
-    If FChecked(3) Then
+    If GetTmpControl("C3").State Then
         '貼付け先領域全体をクリア
         Call ClearRange(objDestRange)
     Else
         '対象外のセルは更新しない時
-        If FChecked(1) Then
+        If GetTmpControl("C1").State Then
             '同じ色のセルをクリア
             Call ClearRange(objSameRange)
         Else
@@ -819,8 +828,8 @@ Private Sub PasteSub(ByRef Color As TRGBQuad, ByRef objCopyRange As Range, ByRef
     End If
     
     '透明セルの設定
-    If FChecked(3) Then
-        If FChecked(1) Then
+    If GetTmpControl("C3").State Then
+        If GetTmpControl("C1").State Then
             '違う色のセルを透明化
             Call ColorToCell(objDiffRange, OleColorToARGB(&HFFFFFF, 0), False)
         Else
@@ -830,7 +839,7 @@ Private Sub PasteSub(ByRef Color As TRGBQuad, ByRef objCopyRange As Range, ByRef
     End If
     
     'カラーの設定
-    If FChecked(1) Then
+    If GetTmpControl("C1").State Then
         '同じ色のセルを設定
         Call ColorToCell(objSameRange, Color, False)
     Else
@@ -921,7 +930,8 @@ End Sub
 Public Sub 色増減(ByVal lngUp As Long)
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
-    If FChecked(4) Or FChecked(5) Or FChecked(6) Or FChecked(7) Then
+    If GetTmpControl("C4").State Or GetTmpControl("C5").State Or _
+       GetTmpControl("C6").State Or GetTmpControl("C7").State Then
     Else
         Call MsgBox("RGBおよびアルファ値のいずれもチェックされていません")
         Exit Sub
@@ -941,16 +951,16 @@ On Error GoTo ErrHandle
     
     'RGBαの増減値
     Dim UpDown(1 To 4) As Long
-    If FChecked(4) Then
+    If GetTmpControl("C4").State Then
         UpDown(1) = lngUp
     End If
-    If FChecked(5) Then
+    If GetTmpControl("C5").State Then
         UpDown(2) = lngUp
     End If
-    If FChecked(6) Then
+    If GetTmpControl("C6").State Then
         UpDown(3) = lngUp
     End If
-    If FChecked(7) Then
+    If GetTmpControl("C7").State Then
         UpDown(4) = lngUp
     End If
     
@@ -1036,4 +1046,289 @@ Exit Function
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Function
+
+'*****************************************************************************
+'[概要] 色を数値化
+'[引数] True:RGBA(16進8桁),False:RGB(16進6桁)
+'[戻値] なし
+'*****************************************************************************
+Public Sub 色を数値化(ByVal blnAlpha As Boolean)
+On Error GoTo ErrHandle
+    If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    
+    '選択範囲の重複を排除
+    Dim objSelection As Range
+    Set objSelection = ReSelectRange(Selection)
+    
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    Dim objCell As Range
+    Dim strValue As String
+    For Each objCell In objSelection
+        If blnAlpha Then
+            strValue = Cell2RGBA(objCell)
+        Else
+            strValue = Cell2RGB(objCell)
+        End If
+        If strValue = "0" Then
+            objCell.Value = 0
+        Else
+            objCell.Value = "'" & strValue
+        End If
+    Next
+    
+    'フォントの色と網掛けを標準に戻す
+    With objSelection
+        .Font.ColorIndex = xlAutomatic
+        .Interior.Pattern = xlSolid
+    End With
+    Call Selection.Select
+    Call SetOnUndo("色を数値化")
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+
+'*****************************************************************************
+'[概要] 数値から色を設定
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 数値から色を設定()
+On Error GoTo ErrHandle
+    If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+        
+    '値の入力されたセルのみ対象
+    Dim objSelection As Range
+    If Selection.Count <> 1 Then
+        Dim objCells(1 To 3) As Range
+        With Selection
+            On Error Resume Next
+            Set objCells(1) = .SpecialCells(xlCellTypeConstants)
+            Set objCells(2) = .SpecialCells(xlCellTypeFormulas)
+            On Error GoTo 0
+        End With
+        Set objSelection = UnionRange(objCells(1), objCells(2))
+        If objSelection Is Nothing Then Exit Sub
+    Else
+        Set objSelection = Selection
+    End If
+    
+    '対象セルを取得
+    Dim objRange As Range
+    Dim objZero As Range
+    Dim objCell As Range
+    Dim vValue  As Variant
+    For Each objCell In objSelection
+        vValue = objCell.Value
+        If IsNumeric(vValue) Then
+            If vValue = 0 Then
+                Set objZero = UnionRange(objZero, objCell)
+            End If
+        ElseIf Left(vValue, 1) = "$" Then
+            If Len(vValue) = 7 Or Len(vValue) = 9 Then
+                If IsNumeric("&H" & Mid(vValue, 2)) Then
+                   Set objRange = UnionRange(objRange, objCell)
+                End If
+            End If
+        End If
+    Next
+    If (objRange Is Nothing) And (objZero Is Nothing) Then Exit Sub
+        
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    
+    '透明色以外
+    If Not (objRange Is Nothing) Then
+        '高速化のため書式をクリア
+        With objRange
+            .Interior.Pattern = xlNone
+            .Font.Color = xlAutomatic
+        End With
+        
+        Dim RGBA As TRGBQuad
+        For Each objCell In objRange
+            vValue = objCell.Value
+            With RGBA
+                .Red = "&H" & Mid(vValue, 2, 2)
+                .Green = "&H" & Mid(vValue, 4, 2)
+                .Blue = "&H" & Mid(vValue, 6, 2)
+                If Len(vValue) = 9 Then
+                    '8桁の時
+                    .Alpha = "&H" & Mid(vValue, 8, 2)
+                Else
+                    '6桁の時、不透明
+                    .Alpha = 255
+                End If
+            End With
+            Call ColorToCell(objCell, RGBA, True)
+        Next
+    End If
+    
+    '透明色
+    If Not (objZero Is Nothing) Then
+        Call ColorToCell(objZero, OleColorToARGB(&HFFFFFF, 0), True)
+    End If
+    Call Selection.Select
+    Call SetOnUndo("数値から色を設定")
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] アルファ値を表示
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub アルファ値を表示()
+On Error GoTo ErrHandle
+    If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    
+    '選択範囲の重複を排除
+    Dim objSelection As Range
+    Set objSelection = ReSelectRange(Selection)
+    
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    
+On Error Resume Next
+    Dim Alpha As Byte
+    Dim vValue As String
+    Dim objCell As Range
+    For Each objCell In objSelection
+        With objCell.Interior
+            Select Case .ColorIndex
+            Case xlNone, xlAutomatic
+                '透明
+                Alpha = 0
+            Case Else
+                '不透明
+                Alpha = 255
+                '半透明かどうか
+                If .Pattern = xlGray8 Then
+                    vValue = objCell.Value
+                    If IsNumeric(vValue) Then
+                        If 0 <= CLng(vValue) And CLng(vValue) <= 255 Then
+                            'セルに入力された数値がアルファ値
+                            Alpha = vValue
+                        End If
+                    End If
+                End If
+            End Select
+        End With
+        objCell.Value = Alpha
+    Next
+On Error GoTo ErrHandle
+    
+    'フォントの色を標準に戻す
+    With objSelection.Font
+        .ColorIndex = xlAutomatic
+    End With
+    Call SetOnUndo("α値表示")
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] 数値からアルファ値を設定
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 数値からアルファ値を設定()
+On Error GoTo ErrHandle
+    If CheckSelection <> E_Range Then Exit Sub
+    If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
+        Call MsgBox("すべての行または列の選択時は実行出来ません")
+        Exit Sub
+    End If
+    
+    '選択範囲の重複を排除
+    Dim objSelection As Range
+    Set objSelection = ReSelectRange(Selection)
+    
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    
+On Error Resume Next
+    '対象セルを取得
+    Dim objRange As Range
+    Dim objZero As Range
+    Dim obj255 As Range
+    Dim objCell As Range
+    Dim vValue  As Variant
+    For Each objCell In objSelection
+        vValue = objCell.Value
+        If IsNumeric(vValue) And vValue <> "" Then
+            Select Case vValue
+            Case 0 To 255
+                Select Case objCell.Interior.ColorIndex
+                Case xlNone, xlAutomatic
+                    Set objZero = UnionRange(objZero, objCell)
+                Case Else
+                    Select Case vValue
+                    Case 0
+                        Set objZero = UnionRange(objZero, objCell)
+                    Case 255
+                        Set obj255 = UnionRange(obj255, objCell)
+                    Case 1 To 254
+                        Set objRange = UnionRange(objRange, objCell)
+                    End Select
+                End Select
+            End Select
+        End If
+    Next
+    If (objRange Is Nothing) And (objZero Is Nothing) And (obj255 Is Nothing) Then Exit Sub
+        
+    Application.ScreenUpdating = False
+    Call SaveUndoInfo(Selection)
+    
+    '透明色
+    If Not (objZero Is Nothing) Then
+        Call ColorToCell(objZero, OleColorToARGB(&HFFFFFF, 0), True)
+    End If
+    
+    '不透明色
+    If Not (obj255 Is Nothing) Then
+        With obj255
+            .Interior.Pattern = xlAutomatic
+            .Font.Color = xlAutomatic
+            .ClearContents
+        End With
+    End If
+
+    '半透明
+    If Not (objRange Is Nothing) Then
+        With objRange.Interior
+            .Pattern = xlGray8
+            .PatternColor = &HFFFFFF '白
+        End With
+        
+        For Each objCell In objRange
+            With objCell.Interior
+                objCell.Font.Color = .Color '文字を背景色と同じにする
+            End With
+        Next
+    End If
+    
+    Call Selection.Select
+    Call SetOnUndo("α値設定")
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
 

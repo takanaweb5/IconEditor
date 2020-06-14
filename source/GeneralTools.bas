@@ -1,5 +1,6 @@
 Attribute VB_Name = "GeneralTools"
 Option Explicit
+Option Private Module
 
 Private Declare PtrSafe Function OpenClipboard Lib "user32" (ByVal hwnd As LongPtr) As Long
 Private Declare PtrSafe Function CloseClipboard Lib "user32" () As Long
@@ -279,9 +280,70 @@ Public Function ClearRange(ByRef objRange As Range)
     If objRange Is Nothing Then Exit Function
     With objRange
         .Interior.Pattern = xlNone
-        .Font.Color = xlAutomatic
+        .Font.ColorIndex = xlAutomatic
         .ClearContents
     End With
 End Function
 
+'*****************************************************************************
+'[概要] テンポラリのCommandBarControlを取得する
+'[引数] Controlを識別するID（リボンコントロールのID）
+'[戻値] CommandBarControl
+'*****************************************************************************
+Public Function GetTmpControl(ByVal strID As String) As CommandBarControl
+    Set GetTmpControl = CommandBars.FindControl(, , strID & ThisWorkbook.Name)
+End Function
 
+'*****************************************************************************
+'[概要] バイナリファイルをセルに読込む
+'[引数] 読込むファイル名, バイナリファイルを読込む行(Rangeオブジェクト)
+'[戻値] なし
+'*****************************************************************************
+Public Sub LoadResourceFromFile(ByVal strFilename As String, ByRef objRow As Range)
+    'A列はファイル名とする
+    objRow.Cells(1, 1).Value = Dir(strFilename)
+    
+    'ファイルサイズの配列を作成
+    ReDim Data(1 To FileLen(strFilename)) As Byte
+
+    Dim File As Integer
+    File = FreeFile()
+    Open strFilename For Binary Access Read As #File
+    Get #File, , Data
+    Close #File
+    
+    Dim x As Long
+    For x = 1 To UBound(Data)
+        objRow.Cells(1, x + 1) = Data(x)
+    Next
+End Sub
+
+'*****************************************************************************
+'[概要] セルのデータをバイナリファイルを書込む
+'[引数] 書込むファイル名, バイナリファイルデータを取得する行(Rangeオブジェクト)
+'[戻値] なし
+'*****************************************************************************
+Public Sub SaveResourceToFile(ByVal strFilename As String, ByRef objRow As Range)
+    'ファイルサイズの配列を作成
+    ReDim Data(1 To objRow.Cells(1, 1).End(xlToRight).Column - 1) As Byte
+    Dim x As Long
+    For x = 1 To UBound(Data)
+         Data(x) = objRow.Cells(1, x + 1)
+    Next
+    
+    Dim File As Integer
+    File = FreeFile()
+    Open strFilename For Binary Access Write As #File
+    Put #File, , Data
+    Close #File
+End Sub
+
+'Sub aaa()
+'    Const f = "Z:\tmp\"
+'    Dim a
+'    a = Array("PasteColor.png", "SameCell.png", "DiffCell.png", "ReverseCell.png", "Purple.png", "Alpha.png", "ChangeColor.png", "Fill.png", "BrightnessDown.png", "BrightnessUp.png", "SaturationDown.png", "SaturationUp.png", "HueDown.png", "HueUp.png")
+'    Dim i
+'    For i = LBound(a) To UBound(a)
+'        Call LoadResourceFromFile(f & a(i), Worksheets("Resource").Rows(i + 1))
+'    Next
+'End Sub

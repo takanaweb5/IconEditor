@@ -1,7 +1,8 @@
 Attribute VB_Name = "UndoInfo"
 Option Explicit
+Option Private Module
 
-Private Const UndoSheetName = "Undo"
+Public Const UndoSheetName = "Undo"
 Private FRange     As Range   'Undoの対象領域
 Private FSelection As String  '選択領域のアドレス
 
@@ -26,8 +27,9 @@ Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As Stri
     Call ClearUndoSheet
     FSelection = objSelection.Address(False, False)
     Set FRange = GetCanvas(objSelection)
-    '謎の例外を回避するためにUndoシートのコピー範囲を使用済にしておく
-    objSheet.Range(FRange.Address).Interior.ColorIndex = 0
+    '謎の例外を回避するためにUndoシート全般を使用済にしておく
+    objSheet.Cells.Interior.ColorIndex = 0
+'    objSheet.Range(FRange.Address).Interior.ColorIndex = 0
     
     Dim blnCopyObjectsWithCells  As Boolean
     blnCopyObjectsWithCells = Application.CopyObjectsWithCells
@@ -98,6 +100,7 @@ On Error GoTo Finalization
     Call FRange.Worksheet.Activate
     Call Range(FSelection).Select
     Call ClearUndoSheet
+    Call ThisWorkbook.Worksheets(UndoSheetName).Cells.Clear
 Finalization:
     Set FRange = Nothing
     FSelection = ""
@@ -109,7 +112,7 @@ End Sub
 '[引数] なし
 '[戻値] なし
 '*****************************************************************************
-Private Sub ClearUndoSheet()
+Public Sub ClearUndoSheet()
     Dim objSheet As Worksheet
     Set objSheet = ThisWorkbook.Worksheets(UndoSheetName)
     
@@ -117,9 +120,12 @@ Private Sub ClearUndoSheet()
     For Each objShape In objSheet.Shapes
         Call objShape.Delete
     Next
-    Call objSheet.Cells.Delete
+    
+    'これをするとExcel2013で実行が遅くなるのでやめる
+'    Call objSheet.Cells.Clear
+    
     '最後のセルを修正する
-    Call objSheet.Cells.Parent.UsedRange
+'    Call objSheet.Cells.Parent.UsedRange
 End Sub
 
 '*****************************************************************************

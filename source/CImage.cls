@@ -333,18 +333,18 @@ End Property
 '[戻値] なし
 '*****************************************************************************
 Private Sub Transpose()
-    ReDim Work(1 To FHeight, 1 To FWidth) As TRGBQuad
+    ReDim work(1 To FHeight, 1 To FWidth) As TRGBQuad
     Dim x As Long, y As Long
     For x = 1 To FHeight
         For y = 1 To FWidth
-            Work(x, y) = FPixels(y, x)
+            work(x, y) = FPixels(y, x)
         Next
     Next
     Dim Swap As Long
     Swap = FWidth
     FWidth = FHeight
     FHeight = Swap
-    FPixels = Work
+    FPixels = work
 End Sub
 
 '*****************************************************************************
@@ -353,14 +353,14 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Public Sub FlipHorizontal()
-    ReDim Work(1 To FWidth, 1 To FHeight) As TRGBQuad
+    ReDim work(1 To FWidth, 1 To FHeight) As TRGBQuad
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
-            Work(x, y) = FPixels(x, FHeight - y + 1)
+            work(x, y) = FPixels(x, FHeight - y + 1)
         Next
     Next
-    FPixels = Work
+    FPixels = work
 End Sub
 
 '*****************************************************************************
@@ -412,6 +412,37 @@ On Error GoTo Finalization
     Dim hGdiImage As LongPtr
     If GdipLoadImageFromFile(ByVal StrPtr(strFile), hGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipLoadImageFromFileエラー")
+    End If
+    Call GdipBitmapSetResolution(hGdiImage, 96#, 96#) '標準のDPIに設定
+    Call GdipGetImageWidth(hGdiImage, FWidth)
+    Call GdipGetImageHeight(hGdiImage, FHeight)
+    ReDim FPixels(1 To FWidth, 1 To FHeight)
+    Call GetPixelsFromImage(hGdiImage)
+Finalization:
+    If hGdiImage <> 0 Then Call GdipDisposeImage(hGdiImage)
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
+End Sub
+
+'*****************************************************************************
+'[概要] セルのデータからアイコンファイルを読込む
+'[引数] データを取得する行(Rangeオブジェクト)
+'[戻値] なし
+'*****************************************************************************
+Public Sub LoadImageFromResource(ByRef objRow As Range)
+On Error GoTo Finalization
+    'ファイルサイズの配列を作成
+    ReDim Data(1 To objRow.Cells(1, 1).End(xlToRight).Column - 1) As Byte
+    Dim x As Long
+    For x = 1 To UBound(Data)
+         Data(x) = objRow.Cells(1, x + 1)
+    Next
+    
+    Dim Stream    As IUnknown
+    Dim hGdiImage As LongPtr
+    If CreateStreamOnHGlobal(VarPtr(Data(1)), 0, Stream) <> S_OK Then GoTo Finalization
+    
+    If GdipLoadImageFromStream(ObjPtr(Stream), hGdiImage) <> S_OK Then
+        Call Err.Raise(513, "LoadImageFromResourceエラー")
     End If
     Call GdipBitmapSetResolution(hGdiImage, 96#, 96#) '標準のDPIに設定
     Call GdipGetImageWidth(hGdiImage, FWidth)
@@ -708,20 +739,14 @@ Public Sub SetPixelsToRange(ByVal objRange As Range)
     Dim objCell As Range
     Dim Color  As TRGBQuad
     
-    Dim StartTime As Long
-    StartTime = GetTickCount
-    
     '高速化のためいったん書式をクリア
     Call ClearRange(objRange.Resize(FHeight, FWidth))
-    
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
             Call ColorToCell(objRange.Cells(y, x), FPixels(x, y), False)
         Next
     Next
-    
-    Debug.Print GetTickCount - StartTime
 End Sub
 
 '*****************************************************************************
@@ -738,6 +763,7 @@ On Error GoTo Finalization
     '左下から上に向かって設定するため水平方向に反転させる
     Call FlipHorizontal
     MaskSize = MakeMaskBits(MaskBits())
+    Call FlipHorizontal '反転を元に戻す
     
     Dim IconFileHeader As ICONDIR
     Dim IconInfHeader  As ICONDIRENTRY
@@ -769,7 +795,7 @@ On Error GoTo Finalization
 '    Dim x, y
 '    For x = 1 To FWidth
 '        For y = 1 To FHeight
-'            FPixels2(x, y).Alpha = 0 '検証用
+'            FPixels(x, y).Alpha = 0 '検証用
 '        Next
 '    Next
     
@@ -781,11 +807,13 @@ On Error GoTo Finalization
     Put #File, , IconFileHeader
     Put #File, , IconInfHeader
     Put #File, , BmpInfHeader
+    '左下から上に向かって設定するため水平方向に反転させる
+    Call FlipHorizontal
     Put #File, , FPixels()
     Put #File, , MaskBits
+    Call FlipHorizontal '反転を元に戻す
 Finalization:
     If blnOpen Then Close #File
-    Call FlipHorizontal  '水平方向の反転を戻す
 End Sub
 
 '*****************************************************************************
@@ -865,7 +893,7 @@ Finalization:
 End Sub
 
 '*****************************************************************************
-'[概要] hBitmapからFPixelsにアルファチェネルありの色を設定する
+'[概要] hBitmapからFPixelsにアルファチャネルありの色を設定する
 '[引数] Bitmapハンドル
 '[戻値] なし
 '*****************************************************************************
@@ -875,6 +903,8 @@ On Error GoTo Finalization
     Dim BmpInfHeader   As BITMAPINFOHEADER
     hDC = CreateCompatibleDC(0)
     BmpInfHeader.size = 40 '40固定
+    
+    '幅と高さのみ取得
     Call GetDIBits(hDC, hBitmap, 0, 0, ByVal 0, BmpInfHeader, DIB_RGB_COLORS)
     Call SetSize(BmpInfHeader.Width, Abs(BmpInfHeader.Height))
     
@@ -886,6 +916,7 @@ On Error GoTo Finalization
         .SizeImage = 0 '省略可
     End With
     
+    'FPixels()に値を設定
     Call GetDIBits(hDC, hBitmap, 0, FHeight, FPixels(1, 1), BmpInfHeader, DIB_RGB_COLORS)
     
     'αチャンネルがすべて初期値の時は、全てのPixelのα値を255に再設定する

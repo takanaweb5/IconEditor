@@ -1,5 +1,6 @@
-Attribute VB_Name = "PixellColor"
+Attribute VB_Name = "PixelColor"
 Option Explicit
+Option Private Module
 
 Public Type TRGBQuad
     Blue    As Byte
@@ -15,33 +16,33 @@ Public Type TRGB
     None    As Byte
 End Type
 
-'å‹ã‚­ãƒ£ã‚¹ãƒˆç”¨
-Private Type TLong
+'Œ^ƒLƒƒƒXƒg—p
+Public Type TLong
     Long   As Long
 End Type
 
 '*****************************************************************************
-'[æ¦‚è¦] Cellã®è‰²ã‚’å–å¾—ã™ã‚‹
-'[å¼•æ•°] å¯¾è±¡ã®ã‚»ãƒ«
-'[æˆ»å€¤] TRGBQuad
+'[ŠT—v] Cell‚ÌF‚ğæ“¾‚·‚é
+'[ˆø”] ‘ÎÛ‚ÌƒZƒ‹
+'[–ß’l] TRGBQuad
 '*****************************************************************************
 Public Function CellToColor(ByRef objCell As Range) As TRGBQuad
-    Dim strNumeric As String
     Dim Alpha As Byte
+    Dim vValue As Variant
     With objCell.Interior
         Select Case .ColorIndex
         Case xlNone, xlAutomatic
-            'é€æ˜
+            '“§–¾
             CellToColor = OleColorToARGB(&HFFFFFF, 0)
         Case Else
-            Alpha = &HFF 'ä¸é€æ˜
-            'åŠé€æ˜ã‹ã©ã†ã‹
+            Alpha = &HFF '•s“§–¾
+            '”¼“§–¾‚©‚Ç‚¤‚©
             If .Pattern = xlGray8 Then
-                strNumeric = Replace(objCell.Value, "$", "&H", 1, 1)
-                If IsNumeric(strNumeric) Then
-                    If 0 <= CLng(strNumeric) And CLng(strNumeric) <= 255 Then
-                        'ã‚»ãƒ«ã«å…¥åŠ›ã•ã‚ŒãŸæ•°å€¤ãŒã‚¢ãƒ«ãƒ•ã‚¡å€¤
-                        Alpha = CByte(strNumeric)
+                vValue = objCell.Value
+                If IsNumeric(vValue) And vValue <> "" Then
+                    If 0 <= CLng(vValue) And CLng(vValue) <= 255 Then
+                        'ƒZƒ‹‚É“ü—Í‚³‚ê‚½”’l‚ªƒAƒ‹ƒtƒ@’l
+                        Alpha = CByte(vValue)
                     End If
                 End If
             End If
@@ -51,9 +52,9 @@ Public Function CellToColor(ByRef objCell As Range) As TRGBQuad
 End Function
 
 '*****************************************************************************
-'[æ¦‚è¦] Cellã®è‰²ã‚’è¨­å®šã™ã‚‹
-'[å¼•æ•°] è‰²ã‚’è¨­å®šã™ã‚‹ã‚»ãƒ«ï¼Œè¨­å®šã™ã‚‹è‰²ï¼ŒåˆæœŸåŒ–ãŒå¿…è¦ã‹ã©ã†ã‹
-'[æˆ»å€¤] ãªã—
+'[ŠT—v] Cell‚ÌF‚ğİ’è‚·‚é
+'[ˆø”] F‚ğİ’è‚·‚éƒZƒ‹Cİ’è‚·‚éFC‰Šú‰»‚ª•K—v‚©‚Ç‚¤‚©
+'[–ß’l] ‚È‚µ
 '*****************************************************************************
 Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad, blnClear As Boolean)
     If objCell Is Nothing Then Exit Sub
@@ -62,24 +63,24 @@ Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad, blnClear
     End If
     With objCell.Interior
         Select Case Color.Alpha
-        Case 0   'é€æ˜
+        Case 0   '“§–¾
             .Pattern = xlGray8
-        Case 255 'ä¸é€æ˜
+        Case 255 '•s“§–¾
             .Color = ARGBToOleColor(Color)
-        Case Else 'åŠé€æ˜
+        Case Else '”¼“§–¾
             .Color = ARGBToOleColor(Color)
             .Pattern = xlGray8
-            .PatternColor = &HFFFFFF 'ç™½
+            .PatternColor = &HFFFFFF '”’
             objCell.Value = Color.Alpha
-            objCell.Font.Color = ARGBToOleColor(Color) 'æ–‡å­—ã‚’èƒŒæ™¯è‰²ã¨åŒã˜ã«ã™ã‚‹
+            objCell.Font.Color = .Color  '•¶š‚ğ”wŒiF‚Æ“¯‚¶‚É‚·‚é
         End Select
     End With
 End Sub
 
 '*****************************************************************************
-'[æ¦‚è¦] TRGBQuadå‹ã‚’OLE_COLORã«å¤‰æ›ã™ã‚‹
-'[å¼•æ•°] TRGBQuad
-'[æˆ»å€¤] OLE_COLOR
+'[ŠT—v] TRGBQuadŒ^‚ğOLE_COLOR‚É•ÏŠ·‚·‚é
+'[ˆø”] TRGBQuad
+'[–ß’l] OLE_COLOR
 '*****************************************************************************
 Public Function ARGBToOleColor(ByRef ARGB As TRGBQuad) As OLE_COLOR
     Dim Color As TLong
@@ -94,9 +95,9 @@ Public Function ARGBToOleColor(ByRef ARGB As TRGBQuad) As OLE_COLOR
 End Function
 
 '*****************************************************************************
-'[æ¦‚è¦] OLE_COLORã‚’TRGBQuadå‹ã«å¤‰æ›ã™ã‚‹
-'[å¼•æ•°] OLE_COLORï¼Œã‚¢ãƒ«ãƒ•ã‚¡å€¤(çœç•¥æ™‚ã¯é€éãªã—)
-'[æˆ»å€¤] TRGBQuad
+'[ŠT—v] OLE_COLOR‚ğTRGBQuadŒ^‚É•ÏŠ·‚·‚é
+'[ˆø”] OLE_COLORCƒAƒ‹ƒtƒ@’l(È—ª‚Í“§‰ß‚È‚µ)
+'[–ß’l] TRGBQuad
 '*****************************************************************************
 Public Function OleColorToARGB(ByVal lngColor As OLE_COLOR, Optional Alpha As Byte = 255) As TRGBQuad
     Dim RGB As TRGB
@@ -109,9 +110,9 @@ Public Function OleColorToARGB(ByVal lngColor As OLE_COLOR, Optional Alpha As By
 End Function
 
 '*****************************************************************************
-'[æ¦‚è¦] RGB & ã‚¢ãƒ«ãƒ•ã‚¡å€¤ã‚’TRGBQuadå‹ã«å¤‰æ›ã™ã‚‹
-'[å¼•æ•°] RGBï¼Œã‚¢ãƒ«ãƒ•ã‚¡å€¤(çœç•¥æ™‚ã¯é€éãªã—)
-'[æˆ»å€¤] TRGBQuad
+'[ŠT—v] RGB & ƒAƒ‹ƒtƒ@’l‚ğTRGBQuadŒ^‚É•ÏŠ·‚·‚é
+'[ˆø”] RGBCƒAƒ‹ƒtƒ@’l(È—ª‚Í“§‰ß‚È‚µ)
+'[–ß’l] TRGBQuad
 '*****************************************************************************
 Private Function RGBToARGB(ByVal Red As Byte, ByVal Green As Byte, ByVal Blue As Byte, Optional Alpha As Byte = 255) As TRGBQuad
     With RGBToARGB
@@ -123,30 +124,30 @@ Private Function RGBToARGB(ByVal Red As Byte, ByVal Green As Byte, ByVal Blue As
 End Function
 
 '*****************************************************************************
-'[æ¦‚è¦] RGBQuadãŒä¸€è‡´ã™ã‚‹ã‹ã©ã†ã‹åˆ¤å®š
-'[å¼•æ•°] æ¯”è¼ƒã™ã‚‹è‰²
-'[æˆ»å€¤] True:ä¸€è‡´
+'[ŠT—v] RGBQuad‚ªˆê’v‚·‚é‚©‚Ç‚¤‚©”»’è
+'[ˆø”] ”äŠr‚·‚éF
+'[–ß’l] True:ˆê’v
 '*****************************************************************************
 Public Function SameColor(ByRef RGBQuad1 As TRGBQuad, ByRef RGBQuad2 As TRGBQuad) As Boolean
     SameColor = (CastARGB(RGBQuad1) = CastARGB(RGBQuad2))
 End Function
 
 '*****************************************************************************
-'[æ¦‚è¦] RGBãŠã‚ˆã³ã‚¢ãƒ«ãƒ•ã‚¡å€¤ã‚’å¢—æ¸›ã•ã›ã‚‹
-'[å¼•æ•°] SrcColor:å¤‰æ›´å‰ã®è‰²ã€RGBÎ±ã®ãã‚Œãã‚Œã®å¢—æ¸›å€¤
-'[æˆ»å€¤] å¤‰æ›´å¾Œã®è‰²
+'[ŠT—v] RGB‚¨‚æ‚ÑƒAƒ‹ƒtƒ@’l‚ğ‘Œ¸‚³‚¹‚é
+'[ˆø”] SrcColor:•ÏX‘O‚ÌFARGBƒ¿‚Ì‚»‚ê‚¼‚ê‚Ì‘Œ¸’l
+'[–ß’l] •ÏXŒã‚ÌF
 '*****************************************************************************
 Public Function AdjustColor(ByRef SrcColor As TRGBQuad, ByVal Red As Long, ByVal Green As Long, ByVal Blue As Long, ByVal Alpha As Long) As TRGBQuad
     AdjustColor = SrcColor
     With AdjustColor
         If Red + Green + Blue + Alpha > 0 Then
-            'å¢—åŠ ã®æ™‚
+            '‘‰Á‚Ì
             .Red = WorksheetFunction.min(255, SrcColor.Red + Red)
             .Green = WorksheetFunction.min(255, SrcColor.Green + Green)
             .Blue = WorksheetFunction.min(255, SrcColor.Blue + Blue)
             .Alpha = WorksheetFunction.min(255, SrcColor.Alpha + Alpha)
         Else
-            'æ¸›å°‘ã®æ™‚
+            'Œ¸­‚Ì
             .Red = WorksheetFunction.max(0, SrcColor.Red + Red)
             .Green = WorksheetFunction.max(0, SrcColor.Green + Green)
             .Blue = WorksheetFunction.max(0, SrcColor.Blue + Blue)
@@ -156,40 +157,109 @@ Public Function AdjustColor(ByRef SrcColor As TRGBQuad, ByVal Red As Long, ByVal
 End Function
 
 '*****************************************************************************
-'[æ¦‚è¦] è‰²ã®HSLã‚’å¢—æ¸›ã•ã›ã‚‹
-'[å¼•æ•°] SrcColor:å¤‰æ›´å‰ã®è‰²ã€HSLã®ãã‚Œãã‚Œã®å¢—æ¸›å€¤
-'[æˆ»å€¤] å¤‰æ›´å¾Œã®è‰²
+'[ŠT—v] F‚ÌHSL‚ğ‘Œ¸‚³‚¹‚é
+'[ˆø”] SrcColor:•ÏX‘O‚ÌFAHSL‚Ì‚»‚ê‚¼‚ê‚Ì‘Œ¸’l
+'[–ß’l] •ÏXŒã‚ÌF
 '*****************************************************************************
-Public Function UpDownHSL(ByRef SrcColor As TRGBQuad, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long) As TRGBQuad
-    Dim H As Double '0ï½360
-    Dim S As Double '0ï½255
-    Dim L As Double '0ï½255
+Public Function UpDownHSL(ByRef SrcColor As TRGBQuad, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long, Optional LeVel As Long = 1) As TRGBQuad
+    Dim H As Double '0`360
+    Dim S As Double '0`255
+    Dim L As Double '0`255
         
     Call RGBToHSL(SrcColor, H, S, L)
+    
+'    Debug.Print LeVel & "  " & "R:" & SrcColor.Red & " " & "G:" & SrcColor.Green & " " & "B:" & SrcColor.Blue, _
+'                "H:" & H & " " & "S:" & S & " " & "L:" & L
+
     If Hue + Saturation + Lightness > 0 Then
-        'å¢—åŠ ã®æ™‚
+        '‘‰Á‚Ì
         H = H + Hue
         S = WorksheetFunction.min(255, S + Saturation)
         L = WorksheetFunction.min(255, L + Lightness)
     Else
-        'æ¸›å°‘ã®æ™‚
+        'Œ¸­‚Ì
         H = H + Hue
         S = WorksheetFunction.max(0, S + Saturation)
         L = WorksheetFunction.max(0, L + Lightness)
     End If
-    UpDownHSL = HSLToRGB(H, S, L)
-    UpDownHSL.Alpha = SrcColor.Alpha
+    Dim R As Double
+    Dim G As Double
+    Dim B As Double
+    Call HSLToRGB(H, S, L, R, G, B)
+    With UpDownHSL
+        .Red = Round(R)
+        .Green = Round(G)
+        .Blue = Round(B)
+        .Alpha = SrcColor.Alpha
+    End With
+    If Not SameColor(SrcColor, UpDownHSL) Then Exit Function
+    
+    '•ÏX‘OŒã‚Å’l‚ªˆê’v‚µ‚½ê‡‚ÍA•sˆê’v‚·‚é‚Ü‚ÅÄ‹AŒÄ‚Ño‚µ
+    If LeVel = 3 Then
+        Exit Function
+    End If
+    LeVel = LeVel + 1
+    UpDownHSL = UpDownHSL(UpDownHSL, Hue * LeVel, Saturation * LeVel, Lightness * LeVel, LeVel)
+    
+    '•ÏX‘OŒã‚Å’l‚ªˆê’v‚µ‚½ê‡‚ÍA˜¨—£‚Ìˆê”Ô‘å‚«‚¢F‚ğ•â³‚·‚é
+'    Dim blnMaxValue(1 To 3) As Boolean
+'    If Hue + Saturation + Lightness > 0 Then
+'        blnMaxValue(1) = (SrcColor.Red = 255)
+'        blnMaxValue(2) = (SrcColor.Green = 255)
+'        blnMaxValue(3) = (SrcColor.Blue = 255)
+'    Else
+'        'Œ¸­‚Ì
+'        blnMaxValue(1) = (SrcColor.Red = 0)
+'        blnMaxValue(2) = (SrcColor.Green = 0)
+'        blnMaxValue(3) = (SrcColor.Blue = 0)
+'    End If
+'
+'    Dim i As Long
+'    Dim Diff(1 To 3) As Double
+'    If Not blnMaxValue(1) Then
+'        Diff(1) = R - SrcColor.Red
+'    End If
+'    If Not blnMaxValue(2) Then
+'        Diff(2) = G - SrcColor.Green
+'    End If
+'    If Not blnMaxValue(3) Then
+'        Diff(3) = B - SrcColor.Blue
+'    End If
+'
+'    Dim sign(1 To 3) As Long '•„†
+'    For i = 1 To 3
+'        If Diff(i) < 0 Then
+'            sign(i) = -1
+'            Diff(i) = Abs(Diff(i))
+'        Else
+'            sign(i) = 1
+'        End If
+'    Next
+'
+'    Dim MaxDiff As Double
+'    MaxDiff = WorksheetFunction.max(Diff(1), Diff(2), Diff(3))
+'    If MaxDiff = 0 Then
+'        '^‚Á”’A‚Ü‚½‚Í^‚Á•‚Ì
+'        Exit Function
+'    End If
+'    If MaxDiff = Diff(1) Then
+'       UpDownHSL.Red = UpDownHSL.Red + sign(1)
+'    ElseIf MaxDiff = Diff(2) Then
+'       UpDownHSL.Green = UpDownHSL.Green + sign(2)
+'    Else
+'       UpDownHSL.Blue = UpDownHSL.Blue + sign(3)
+'    End If
 End Function
 
 '*****************************************************************************
-'[æ¦‚è¦] RGBã‚’HSLã«å¤‰æ›ã™ã‚‹
-'[å¼•æ•°] SrcColor:å¤‰æ›´å‰ã®è‰², è¨ˆç®—çµæœï¼šH:0ï½360,S:0ï½255,L:0ï½255
-'[æˆ»å€¤] å¤‰æ›å¾Œã®HSL(ãŸã ã—å¼•æ•°)
+'[ŠT—v] RGB‚ğHSL‚É•ÏŠ·‚·‚é
+'[ˆø”] SrcColor:•ÏX‘O‚ÌF, ŒvZŒ‹‰ÊFH:0`360,S:0`255,L:0`255
+'[–ß’l] •ÏŠ·Œã‚ÌHSL(‚½‚¾‚µˆø”)
 '*****************************************************************************
 Private Sub RGBToHSL(ByRef SrcColor As TRGBQuad, ByRef H As Double, ByRef S As Double, ByRef L As Double)
-    Dim R As Long '0ï½255
-    Dim G As Long '0ï½255
-    Dim B As Long '0ï½255
+    Dim R As Long '0`255
+    Dim G As Long '0`255
+    Dim B As Long '0`255
     With SrcColor
         R = .Red
         G = .Green
@@ -201,10 +271,10 @@ Private Sub RGBToHSL(ByRef SrcColor As TRGBQuad, ByRef H As Double, ByRef S As D
     max = WorksheetFunction.max(R, G, B)
     min = WorksheetFunction.min(R, G, B)
     
-    'L(æ˜åº¦)
+    'L(–¾“x)
     L = (max + min) / 2
     
-    'H(è‰²ç›¸)
+    'H(F‘Š)
     If max <> min Then
         If max = R Then
             H = 60 * (G - B) / (max - min)
@@ -220,7 +290,7 @@ Private Sub RGBToHSL(ByRef SrcColor As TRGBQuad, ByRef H As Double, ByRef S As D
         End If
     End If
      
-    'S(å½©åº¦)
+    'S(Ê“x)
     If max <> min Then
         If L <= 127 Then
           S = (max - min) / (max + min)
@@ -232,11 +302,11 @@ Private Sub RGBToHSL(ByRef SrcColor As TRGBQuad, ByRef H As Double, ByRef S As D
 End Sub
 
 '*****************************************************************************
-'[æ¦‚è¦] HSLã‚’RGBã«å¤‰æ›ã™ã‚‹
-'[å¼•æ•°] H:0ï½360,S:0ï½255,L:0ï½255
-'[æˆ»å€¤] RGB
+'[ŠT—v] HSL‚ğRGB‚É•ÏŠ·‚·‚é
+'[ˆø”] H:0`360,S:0`255,L:0`255
+'[–ß’l] RGB(‘æ4ˆø”`‘æ6ˆø”)
 '*****************************************************************************
-Private Function HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Double) As TRGBQuad
+Private Sub HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Double, ByRef R As Double, ByRef G As Double, ByRef B As Double)
     Dim max As Double
     Dim min As Double
     If L <= 127 Then
@@ -247,9 +317,6 @@ Private Function HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Doubl
       min = (L - (255 - L) * (S / 255))
     End If
 
-    Dim R As Double '0ï½255
-    Dim G As Double '0ï½255
-    Dim B As Double '0ï½255
     If H < 0 Then
         H = H + 360
     End If
@@ -281,17 +348,12 @@ Private Function HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Doubl
         G = min
         B = min + (max - min) * ((360 - H) / 60)
     End If
-    With HSLToRGB
-        .Red = Round(R)
-        .Green = Round(G)
-        .Blue = Round(B)
-    End With
-End Function
+End Sub
 
 '*****************************************************************************
-'[æ¦‚è¦] TRGBQuadå‹ã‚’Longå‹ã«ã‚­ãƒ£ã‚¹ãƒˆã™ã‚‹(GDI+ã®é–¢æ•°ã®å¼•æ•°ã«æ¸¡ã™ãŸã‚)
-'[å¼•æ•°] TRGBQuad
-'[æˆ»å€¤] Longå‹
+'[ŠT—v] TRGBQuadŒ^‚ğLongŒ^‚ÉƒLƒƒƒXƒg‚·‚é(GDI+‚ÌŠÖ”‚Ìˆø”‚É“n‚·‚½‚ß)
+'[ˆø”] TRGBQuad
+'[–ß’l] LongŒ^
 '*****************************************************************************
 Public Function CastARGB(ByRef ARGB As TRGBQuad) As Long
     Dim Color As TLong

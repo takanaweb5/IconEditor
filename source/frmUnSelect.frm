@@ -36,7 +36,7 @@ Private strLastAddress As String '前回の領域の復元用
 '*****************************************************************************
 '[概要] 各種マウス操作時、RefEditを有効にさせる
 '*****************************************************************************
-Private Sub UserForm_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub UserForm_MouseMove(ByVal button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
     On Error Resume Next
     RefEdit.SetFocus
 End Sub
@@ -44,7 +44,7 @@ Private Sub Frame_Click()
     On Error Resume Next
     RefEdit.SetFocus
 End Sub
-Private Sub Frame_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub Frame_MouseMove(ByVal button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
     On Error Resume Next
     RefEdit.SetFocus
 End Sub
@@ -52,15 +52,15 @@ Private Sub lblTitle_Click()
     On Error Resume Next
     RefEdit.SetFocus
 End Sub
-Private Sub lblTitle_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub lblTitle_MouseMove(ByVal button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
     On Error Resume Next
     RefEdit.SetFocus
 End Sub
-Private Sub cmdOK_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cmdOK_MouseMove(ByVal button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
     On Error Resume Next
     RefEdit.SetFocus
 End Sub
-Private Sub cmdCancel_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cmdCancel_MouseMove(ByVal button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
     On Error Resume Next
     RefEdit.SetFocus
 End Sub
