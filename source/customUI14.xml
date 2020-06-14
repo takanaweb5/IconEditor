@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-<customUI onLoad="onLoad" xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<customUI onLoad="onLoad" xmlns="http://schemas.microsoft.com/office/2009/07/customui">
 <ribbon>
 <tabs>
 <tab id="tab1" label="アイコンエディタ">
-
-<group id="grp1" label="ファイル">
+<group id="grp1" label="ファイル" imageMso="PictureReset">
  <button id="B11"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -47,7 +46,7 @@
    onAction="onAction"/>
 </group>
 
-<group id="grp2" label="貼付け">
+<group id="grp2" label="貼付け" imageMso="PasteAsPicture">
   <button id="B21"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -86,20 +85,22 @@
  </box>
 </group>
 
-<group id="grp3" label="編集">
- <box id="box31" boxStyle="horizontal">
+<group id="grp3" label="編集" imageMso="BlackAndWhiteWhite" centerVertically="true" autoScale="false">
   <button id="B31"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
+  <control idMso="CellFillColorPicker" size="normal" label="セルの色" showLabel="true"/>
+  <control idMso="CellStylesGallery" size="normal" label="スタイル"/>
   <button id="B32"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
+ <separator id="SP31"/>
   <button id="B33"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -112,7 +113,7 @@
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
- </box>
+ <box id="box32" boxStyle="horizontal">
   <button id="B35"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -125,16 +126,22 @@
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
- <separator id="SP31"/>
   <button id="B37"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
+  <button id="B38"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
+   onAction="onAction"/>
+ </box>
 </group>
 
-<group id="grp4" label="選択">
+<group id="grp4" label="選択" imageMso="SelectSheet" autoScale="true">
   <button id="B41"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -155,7 +162,7 @@
    onAction="onAction"/>
 </group>
 
-<group id="grp5" label="色調整">
+<group id="grp5" label="色調整"  imageMso="AppointmentColorDialog" autoScale="true">
  <box id="box51" boxStyle="horizontal">
   <button id="B51"
    getVisible="getVisible" getEnabled="getEnabled"
@@ -224,7 +231,7 @@
   <checkBox id="C7" label="α値" screentip="アルファ値" supertip="アルファ値を対象とするかどうかのチェック" getEnabled="getEnabled" getPressed="getPressed" onAction="onCheckAction"/>
 </group>
 
-<group id="grp6" label="サンプル表示">
+<group id="grp6" label="サンプル表示 ＆ コピー" imageMso="TentativeAcceptInvitation">
   <button id="B61"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -263,14 +270,13 @@
    onAction="onAction"/>
 </group>
 
-<group id="grp7" label="ツール">
+<group id="grp7" label="ツール" imageMso="ToolboxGallery" centerVertically="false" autoScale="true">
   <button id="B71"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
- <box id="box71" boxStyle="vertical">
   <button id="B72"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -283,8 +289,7 @@
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
- </box>
- <box id="box72" boxStyle="vertical">
+ <separator id="SP72" visible="true"/>
   <button id="B74"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
@@ -297,27 +302,12 @@
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
- </box>
- <box id="box73" boxStyle="vertical">
   <button id="B76"
    getVisible="getVisible" getEnabled="getEnabled"
    getShowLabel="getShowLabel" getLabel="getLabel"
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
-  <button id="B77"
-   getVisible="getVisible" getEnabled="getEnabled"
-   getShowLabel="getShowLabel" getLabel="getLabel"
-   getScreentip="getScreentip" getSupertip="getSupertip"
-   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
-   onAction="onAction"/>
-  <button id="B78"
-   getVisible="getVisible" getEnabled="getEnabled"
-   getShowLabel="getShowLabel" getLabel="getLabel"
-   getScreentip="getScreentip" getSupertip="getSupertip"
-   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
-   onAction="onAction"/>
- </box>
 </group>
 
 </tab>
