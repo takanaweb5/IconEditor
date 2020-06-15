@@ -97,6 +97,7 @@ On Error GoTo Finalization
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     Call objSheet.Range(FRange.Address).Copy(FRange)
+    FRange.Formula = FRange.Formula
     Call FRange.Worksheet.Activate
     Call Range(FSelection).Select
     Call ClearUndoSheet
