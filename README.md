@@ -95,6 +95,11 @@ PNGファイルで保存すれば、透明色や半透明色は保存されま�
 ## ダウンロード
  [こちら](https://github.com/takanaweb5/IconEditor/releases) からダウンロード可能です。
 
+
+## ご意見
+バグや要望は[こちら](https://github.com/takanaweb5/IconEditor/issues)まで
+![image](https://user-images.githubusercontent.com/50874513/85219654-b3465a80-b3e0-11ea-937e-89708e6af1b8.png)
+
 ## ライセンス
 MITライセンスに準拠します<br>
 Copyright (c) 2019 TAKAHASHI Naoki(JPN) 高橋
