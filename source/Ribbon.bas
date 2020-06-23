@@ -14,7 +14,7 @@ Private Declare PtrSafe Function MapViewOfFile Lib "kernel32" (ByVal hFileMappin
 Private Declare PtrSafe Function UnmapViewOfFile Lib "kernel32" (ByVal lpBaseAddress As LongPtr) As Long
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As LongPtr)
 
-'Private FRibbon As IRibbonUI '例外等が起きても値が損なわれないように共有メモリに変更
+'Private FRibbon As IRibbonUI '例外等が起きても値が損なわれないようにテンポラリのCommandBarに変更
 'Public FChecked(1 To 7) As Boolean
 Private FSampleClick As Boolean
 
@@ -502,7 +502,7 @@ Sub onAction(control As IRibbonControl)
     Case 15
         Call 一括実行シートを開く
     Case 16
-        Call 一括実行シートを開く
+        Call Clipbord画像保存
     
     Case 21
         Call 貼付け
