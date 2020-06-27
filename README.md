@@ -100,8 +100,8 @@ PNGファイルで保存すれば、透明色や半透明色は保存されま�
 - リボンのボタンのアイコンを動的に変更する
 
 ## ダウンロード
- [こちら](https://github.com/takanaweb5/IconEditor/releases) からダウンロード可能です。
-[IconEditor_v@@@.zip] ファイルをダウンロードしてください。※@@@はバージョン
+ [こちら](https://github.com/takanaweb5/IconEditor/releases) からダウンロード可能です。<br>
+ [IconEditor_v@@@.zip] ファイルをダウンロードしてください。※@@@はバージョン
 
 
 
