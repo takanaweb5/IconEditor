@@ -101,6 +101,8 @@ PNGファイルで保存すれば、透明色や半透明色は保存されま�
 
 ## ダウンロード
  [こちら](https://github.com/takanaweb5/IconEditor/releases) からダウンロード可能です。
+[IconEditor_v@@@.zip] ファイルをダウンロードしてください。※@@@はバージョン
+
 
 
 ## ご意見
