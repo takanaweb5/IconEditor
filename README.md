@@ -6,7 +6,7 @@ EXCELでアイコンを作成することが出来ます。
 ![image.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/411106/56939e83-c86c-7198-b4d2-595fbf48c4f1.png)
 
 
-# 動作環境
+## 動作環境
 
 WINDOWS上の EXCEL2010以降 **<font color="RED">32bit 64bit</font>** いずれのバージョンのEXCELでも動作します。
 
