@@ -742,8 +742,8 @@ Public Sub SetPixelsToRange(ByVal objRange As Range)
     'çÇë¨âªÇÃÇΩÇﬂÇ¢Ç¡ÇΩÇÒèëéÆÇÉNÉäÉA
     Call ClearRange(objRange.Resize(FHeight, FWidth))
     Dim x As Long, y As Long
-    For x = 1 To FWidth
-        For y = 1 To FHeight
+    For y = 1 To FHeight
+        For x = 1 To FWidth
             Call ColorToCell(objRange.Cells(y, x), FPixels(x, y), False)
         Next
     Next
