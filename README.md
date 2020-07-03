@@ -8,7 +8,7 @@ EXCELでアイコンを作成することが出来ます。
 
 ## 動作環境
 
-WINDOWS上の EXCEL2010以降 **<font color="RED">32bit 64bit</font>** いずれのバージョンのEXCELでも動作します。
+WINDOWS上の EXCEL2010以降 <font color="red">32bit 64bit</font> いずれのバージョンのEXCELでも動作します。
 
 
 ## 紹介
