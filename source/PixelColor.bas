@@ -2,13 +2,6 @@ Attribute VB_Name = "PixelColor"
 Option Explicit
 Option Private Module
 
-Public Type TRGBQuad
-    Blue    As Byte
-    Green   As Byte
-    Red     As Byte
-    Alpha   As Byte
-End Type
-
 Public Type TRGB
     Red     As Byte
     Green   As Byte

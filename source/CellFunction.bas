@@ -2,6 +2,14 @@ Attribute VB_Name = "CellFunction"
 Option Explicit
 'Option Private Module
 
+Public Type TRGBQuad
+    Blue    As Byte
+    Green   As Byte
+    Red     As Byte
+    Alpha   As Byte
+End Type
+
+
 '*****************************************************************************
 '[概要] セルに適用されるRGBAカラーを取得する
 '[引数] 対象セル

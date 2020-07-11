@@ -338,12 +338,3 @@ Public Sub SaveResourceToFile(ByVal strFilename As String, ByRef objRow As Range
     Close #File
 End Sub
 
-'Sub aaa()
-'    Const f = "Z:\tmp\"
-'    Dim a
-'    a = Array("PasteColor.png", "SameCell.png", "DiffCell.png", "ReverseCell.png", "Purple.png", "Alpha.png", "ChangeColor.png", "Fill.png", "BrightnessDown.png", "BrightnessUp.png", "SaturationDown.png", "SaturationUp.png", "HueDown.png", "HueUp.png")
-'    Dim i
-'    For i = LBound(a) To UBound(a)
-'        Call LoadResourceFromFile(f & a(i), Worksheets("Resource").Rows(i + 1))
-'    Next
-'End Sub
