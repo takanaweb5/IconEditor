@@ -9,6 +9,13 @@ Public Type TRGB
     None    As Byte
 End Type
 
+Public Type TRGBQuad
+    Blue    As Byte
+    Green   As Byte
+    Red     As Byte
+    Alpha   As Byte
+End Type
+
 '型キャスト用
 Public Type TLong
     Long   As Long
@@ -17,16 +24,16 @@ End Type
 '*****************************************************************************
 '[概要] Cellの色を取得する
 '[引数] 対象のセル
-'[戻値] TRGBQuad
+'[戻値] RGBQuad
 '*****************************************************************************
-Public Function CellToColor(ByRef objCell As Range) As TRGBQuad
+Public Function CellToRGBQuad(ByRef objCell As Range) As Long
     Dim Alpha As Byte
     Dim vValue As Variant
     With objCell.Interior
         Select Case .ColorIndex
         Case xlNone, xlAutomatic
             '透明
-            CellToColor = OleColorToARGB(&HFFFFFF, 0)
+            CellToRGBQuad = OleColorToRGBQuad(&HFFFFFF, 0)
         Case Else
             Alpha = &HFF '不透明
             '半透明かどうか
@@ -39,90 +46,94 @@ Public Function CellToColor(ByRef objCell As Range) As TRGBQuad
                     End If
                 End If
             End If
-            CellToColor = OleColorToARGB(.Color, Alpha)
+            CellToRGBQuad = OleColorToRGBQuad(.Color, Alpha)
         End Select
     End With
 End Function
 
 '*****************************************************************************
 '[概要] Cellの色を設定する
-'[引数] 色を設定するセル，設定する色，初期化が必要かどうか
+'[引数] 色を設定するセル，設定する色(RGBQuad)，初期化が必要かどうか
 '[戻値] なし
 '*****************************************************************************
-Public Sub ColorToCell(ByRef objCell As Range, ByRef Color As TRGBQuad, blnClear As Boolean)
+Public Sub RGBQuadToCell(ByRef objCell As Range, ByVal RGBQuad As Long, ByVal blnClear As Boolean)
     If objCell Is Nothing Then Exit Sub
     If blnClear Then
         Call ClearRange(objCell)
     End If
     With objCell.Interior
-        Select Case Color.Alpha
+        Select Case RGBQuadToAlpha(RGBQuad)
         Case 0   '透明
             .Pattern = xlGray8
         Case 255 '不透明
-            .Color = ARGBToOleColor(Color)
+            .Color = RGBQuadToOleColor(RGBQuad)
         Case Else '半透明
-            .Color = ARGBToOleColor(Color)
+            .Color = RGBQuadToOleColor(RGBQuad)
             .Pattern = xlGray8
             .PatternColor = &HFFFFFF '白
-            objCell.Value = Color.Alpha
+            objCell.Value = RGBQuadToAlpha(RGBQuad)
             objCell.Font.Color = .Color  '文字を背景色と同じにする
         End Select
     End With
 End Sub
 
 '*****************************************************************************
-'[概要] TRGBQuad型をOLE_COLORに変換する
-'[引数] TRGBQuad
+'[概要] RGBQuadをOLE_COLORに変換する
+'[引数] RGBQuad
 '[戻値] OLE_COLOR
 '*****************************************************************************
-Public Function ARGBToOleColor(ByRef ARGB As TRGBQuad) As OLE_COLOR
-    Dim Color As TLong
-    Dim RGB As TRGB
+Public Function RGBQuadToOleColor(ByVal lngRGBQuad As Long) As OLE_COLOR
+    Dim Color   As TLong
+    Dim RGBQuad As TRGBQuad
+    Dim RGB     As TRGB
+    Color.Long = lngRGBQuad
+    LSet RGBQuad = Color
     With RGB
-        .Red = ARGB.Red
-        .Green = ARGB.Green
-        .Blue = ARGB.Blue
+        .Red = RGBQuad.Red
+        .Green = RGBQuad.Green
+        .Blue = RGBQuad.Blue
     End With
     LSet Color = RGB
-    ARGBToOleColor = Color.Long
+    RGBQuadToOleColor = Color.Long
 End Function
 
 '*****************************************************************************
-'[概要] OLE_COLORをTRGBQuad型に変換する
+'[概要] OLE_COLORをRGBQuadに変換する
 '[引数] OLE_COLOR，アルファ値(省略時は透過なし)
-'[戻値] TRGBQuad
+'[戻値] RGBQuad
 '*****************************************************************************
-Public Function OleColorToARGB(ByVal lngColor As OLE_COLOR, Optional Alpha As Byte = 255) As TRGBQuad
-    Dim RGB As TRGB
-    Dim Color As TLong
+Public Function OleColorToRGBQuad(ByVal lngColor As OLE_COLOR, Optional Alpha As Byte = 255) As Long
+    Dim Color   As TLong
+    Dim RGBQuad As TRGBQuad
+    Dim RGB     As TRGB
     Color.Long = lngColor
     LSet RGB = Color
-    With RGB
-        OleColorToARGB = RGBToARGB(.Red, .Green, .Blue, Alpha)
+    With RGBQuad
+        .Red = RGB.Red
+        .Green = RGB.Green
+        .Blue = RGB.Blue
+        .Alpha = Alpha
     End With
+    LSet Color = RGBQuad
+    OleColorToRGBQuad = Color.Long
 End Function
 
 '*****************************************************************************
-'[概要] RGB & アルファ値をTRGBQuad型に変換する
+'[概要] RGB & アルファ値をRGBQuadに変換する
 '[引数] RGB，アルファ値(省略時は透過なし)
 '[戻値] TRGBQuad
 '*****************************************************************************
-Private Function RGBToARGB(ByVal Red As Byte, ByVal Green As Byte, ByVal Blue As Byte, Optional Alpha As Byte = 255) As TRGBQuad
-    With RGBToARGB
+Private Function RGBToRGBQuad(ByVal Red As Byte, ByVal Green As Byte, ByVal Blue As Byte, Optional Alpha As Byte = 255) As Long
+    Dim Color   As TLong
+    Dim RGBQuad As TRGBQuad
+    With RGBQuad
         .Red = Red
         .Green = Green
         .Blue = Blue
         .Alpha = Alpha
     End With
-End Function
-
-'*****************************************************************************
-'[概要] RGBQuadが一致するかどうか判定
-'[引数] 比較する色
-'[戻値] True:一致
-'*****************************************************************************
-Public Function SameColor(ByRef RGBQuad1 As TRGBQuad, ByRef RGBQuad2 As TRGBQuad) As Boolean
-    SameColor = (CastARGB(RGBQuad1) = CastARGB(RGBQuad2))
+    LSet Color = RGBQuad
+    RGBToRGBQuad = Color.Long
 End Function
 
 '*****************************************************************************
@@ -130,23 +141,30 @@ End Function
 '[引数] SrcColor:変更前の色、RGBαのそれぞれの増減値
 '[戻値] 変更後の色
 '*****************************************************************************
-Public Function AdjustColor(ByRef SrcColor As TRGBQuad, ByVal Red As Long, ByVal Green As Long, ByVal Blue As Long, ByVal Alpha As Long) As TRGBQuad
-    AdjustColor = SrcColor
-    With AdjustColor
+Public Function AdjustColor(ByRef SrcColor As Long, ByVal Red As Long, ByVal Green As Long, ByVal Blue As Long, ByVal Alpha As Long) As Long
+    Dim SrcRGBQuad As TRGBQuad
+    Dim RGBQuad As TRGBQuad
+    Dim Color   As TLong
+    Color.Long = SrcColor
+    LSet SrcRGBQuad = Color
+    LSet RGBQuad = Color
+    With RGBQuad
         If Red + Green + Blue + Alpha > 0 Then
             '増加の時
-            .Red = WorksheetFunction.min(255, SrcColor.Red + Red)
-            .Green = WorksheetFunction.min(255, SrcColor.Green + Green)
-            .Blue = WorksheetFunction.min(255, SrcColor.Blue + Blue)
-            .Alpha = WorksheetFunction.min(255, SrcColor.Alpha + Alpha)
+            .Red = WorksheetFunction.min(255, SrcRGBQuad.Red + Red)
+            .Green = WorksheetFunction.min(255, SrcRGBQuad.Green + Green)
+            .Blue = WorksheetFunction.min(255, SrcRGBQuad.Blue + Blue)
+            .Alpha = WorksheetFunction.min(255, SrcRGBQuad.Alpha + Alpha)
         Else
             '減少の時
-            .Red = WorksheetFunction.max(0, SrcColor.Red + Red)
-            .Green = WorksheetFunction.max(0, SrcColor.Green + Green)
-            .Blue = WorksheetFunction.max(0, SrcColor.Blue + Blue)
-            .Alpha = WorksheetFunction.max(0, SrcColor.Alpha + Alpha)
+            .Red = WorksheetFunction.max(0, SrcRGBQuad.Red + Red)
+            .Green = WorksheetFunction.max(0, SrcRGBQuad.Green + Green)
+            .Blue = WorksheetFunction.max(0, SrcRGBQuad.Blue + Blue)
+            .Alpha = WorksheetFunction.max(0, SrcRGBQuad.Alpha + Alpha)
         End If
     End With
+
+    AdjustColor = SrcColor
 End Function
 
 '*****************************************************************************
@@ -154,7 +172,7 @@ End Function
 '[引数] SrcColor:変更前の色、HSLのそれぞれの増減値
 '[戻値] 変更後の色
 '*****************************************************************************
-Public Function UpDownHSL(ByRef SrcColor As TRGBQuad, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long, Optional LeVel As Long = 1) As TRGBQuad
+Public Function UpDownHSL(ByRef SrcColor As Long, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long, Optional LeVel As Long = 1) As Long
     Dim H As Double '0～360
     Dim S As Double '0～255
     Dim L As Double '0～255
@@ -179,13 +197,8 @@ Public Function UpDownHSL(ByRef SrcColor As TRGBQuad, ByVal Hue As Long, ByVal S
     Dim G As Double
     Dim B As Double
     Call HSLToRGB(H, S, L, R, G, B)
-    With UpDownHSL
-        .Red = Round(R)
-        .Green = Round(G)
-        .Blue = Round(B)
-        .Alpha = SrcColor.Alpha
-    End With
-    If Not SameColor(SrcColor, UpDownHSL) Then Exit Function
+    UpDownHSL = RGBToRGBQuad(Round(R), Round(G), Round(B), RGBQuadToAlpha(SrcColor))
+    If SrcColor <> UpDownHSL Then Exit Function
     
     '変更前後で値が一致した場合は、不一致するまで再帰呼び出し
     If LeVel = 3 Then
@@ -193,55 +206,6 @@ Public Function UpDownHSL(ByRef SrcColor As TRGBQuad, ByVal Hue As Long, ByVal S
     End If
     LeVel = LeVel + 1
     UpDownHSL = UpDownHSL(UpDownHSL, Hue * LeVel, Saturation * LeVel, Lightness * LeVel, LeVel)
-    
-    '変更前後で値が一致した場合は、乖離の一番大きい色を補正する
-'    Dim blnMaxValue(1 To 3) As Boolean
-'    If Hue + Saturation + Lightness > 0 Then
-'        blnMaxValue(1) = (SrcColor.Red = 255)
-'        blnMaxValue(2) = (SrcColor.Green = 255)
-'        blnMaxValue(3) = (SrcColor.Blue = 255)
-'    Else
-'        '減少の時
-'        blnMaxValue(1) = (SrcColor.Red = 0)
-'        blnMaxValue(2) = (SrcColor.Green = 0)
-'        blnMaxValue(3) = (SrcColor.Blue = 0)
-'    End If
-'
-'    Dim i As Long
-'    Dim Diff(1 To 3) As Double
-'    If Not blnMaxValue(1) Then
-'        Diff(1) = R - SrcColor.Red
-'    End If
-'    If Not blnMaxValue(2) Then
-'        Diff(2) = G - SrcColor.Green
-'    End If
-'    If Not blnMaxValue(3) Then
-'        Diff(3) = B - SrcColor.Blue
-'    End If
-'
-'    Dim sign(1 To 3) As Long '符号
-'    For i = 1 To 3
-'        If Diff(i) < 0 Then
-'            sign(i) = -1
-'            Diff(i) = Abs(Diff(i))
-'        Else
-'            sign(i) = 1
-'        End If
-'    Next
-'
-'    Dim MaxDiff As Double
-'    MaxDiff = WorksheetFunction.max(Diff(1), Diff(2), Diff(3))
-'    If MaxDiff = 0 Then
-'        '真っ白、または真っ黒の時
-'        Exit Function
-'    End If
-'    If MaxDiff = Diff(1) Then
-'       UpDownHSL.Red = UpDownHSL.Red + sign(1)
-'    ElseIf MaxDiff = Diff(2) Then
-'       UpDownHSL.Green = UpDownHSL.Green + sign(2)
-'    Else
-'       UpDownHSL.Blue = UpDownHSL.Blue + sign(3)
-'    End If
 End Function
 
 '*****************************************************************************
@@ -249,11 +213,16 @@ End Function
 '[引数] SrcColor:変更前の色, 計算結果：H:0～360,S:0～255,L:0～255
 '[戻値] 変換後のHSL(ただし引数)
 '*****************************************************************************
-Private Sub RGBToHSL(ByRef SrcColor As TRGBQuad, ByRef H As Double, ByRef S As Double, ByRef L As Double)
+Private Sub RGBToHSL(ByVal SrcColor As Long, ByRef H As Double, ByRef S As Double, ByRef L As Double)
     Dim R As Long '0～255
     Dim G As Long '0～255
     Dim B As Long '0～255
-    With SrcColor
+    
+    Dim RGBQuad As TRGBQuad
+    Dim Color   As TLong
+    Color.Long = SrcColor
+    LSet RGBQuad = Color
+    With RGBQuad
         R = .Red
         G = .Green
         B = .Blue
@@ -343,14 +312,23 @@ Private Sub HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Double, By
     End If
 End Sub
 
-'*****************************************************************************
-'[概要] TRGBQuad型をLong型にキャストする(GDI+の関数の引数に渡すため)
-'[引数] TRGBQuad
-'[戻値] Long型
-'*****************************************************************************
-Public Function CastARGB(ByRef ARGB As TRGBQuad) As Long
+''*****************************************************************************
+''[概要] TRGBQuad型をLong型にキャストする(GDI+の関数の引数に渡すため)
+''[引数] TRGBQuad
+''[戻値] Long型
+''*****************************************************************************
+'Public Function CastARGB(ByRef ARGB As TRGBQuad) As Long
+'    Dim Color As TLong
+'    LSet Color = ARGB
+'    CastARGB = Color.Long
+'End Function
+
+
+Public Function RGBQuadToAlpha(ByVal lngRGBQuad As Long) As Byte
     Dim Color As TLong
-    LSet Color = ARGB
-    CastARGB = Color.Long
+    Dim RGBQuad As TRGBQuad
+    Color.Long = lngRGBQuad
+    LSet RGBQuad = Color
+    RGBQuadToAlpha = RGBQuad.Alpha
 End Function
 

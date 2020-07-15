@@ -2,14 +2,6 @@ Attribute VB_Name = "CellFunction"
 Option Explicit
 'Option Private Module
 
-Public Type TRGBQuad
-    Blue    As Byte
-    Green   As Byte
-    Red     As Byte
-    Alpha   As Byte
-End Type
-
-
 '*****************************************************************************
 '[概要] セルに適用されるRGBAカラーを取得する
 '[引数] 対象セル
@@ -38,7 +30,11 @@ On Error GoTo ErrHandle
                 End If
             End If
             Cell2RGBA = "${R}{G}{B}" & Alpha
-            With OleColorToARGB(.Color)
+            Dim Color As TLong
+            Color.Long = OleColorToRGBQuad(.Color)
+            Dim RGBQuad As TRGBQuad
+            LSet RGBQuad = Color
+            With RGBQuad
                 Cell2RGBA = Replace(Cell2RGBA, "{R}", WorksheetFunction.Dec2Hex(.Red, 2))
                 Cell2RGBA = Replace(Cell2RGBA, "{G}", WorksheetFunction.Dec2Hex(.Green, 2))
                 Cell2RGBA = Replace(Cell2RGBA, "{B}", WorksheetFunction.Dec2Hex(.Blue, 2))
@@ -71,7 +67,11 @@ On Error GoTo ErrHandle
             Cell2RGB = 0
         Case Else
             Cell2RGB = "${R}{G}{B}"
-            With OleColorToARGB(.Color)
+            Dim Color As TLong
+            Color.Long = OleColorToRGBQuad(.Color)
+            Dim RGBQuad As TRGBQuad
+            LSet RGBQuad = Color
+            With RGBQuad
                 Cell2RGB = Replace(Cell2RGB, "{R}", WorksheetFunction.Dec2Hex(.Red, 2))
                 Cell2RGB = Replace(Cell2RGB, "{G}", WorksheetFunction.Dec2Hex(.Green, 2))
                 Cell2RGB = Replace(Cell2RGB, "{B}", WorksheetFunction.Dec2Hex(.Blue, 2))
@@ -231,6 +231,4 @@ Public Function Cell2Blue(Optional objCell As Range = Nothing) As Long
         End Select
     End With
 End Function
-
-
 

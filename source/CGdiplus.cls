@@ -148,6 +148,26 @@ Private Sub Class_Terminate()
 End Sub
 
 '*****************************************************************************
+'[概要] 画像の幅
+'[引数] なし
+'*****************************************************************************
+Public Property Get Width() As Long
+    Dim lngWidth As Long
+    Call GdipGetImageWidth(FGdiImage, lngWidth)
+    Width = lngWidth
+End Property
+
+'*****************************************************************************
+'[概要] 画像の高さ
+'[引数] なし
+'*****************************************************************************
+Public Property Get Height() As Long
+    Dim lngHeight As Long
+    Call GdipGetImageHeight(FGdiImage, lngHeight)
+    Height = lngHeight
+End Property
+
+'*****************************************************************************
 '[概要] ファイルからGdiImageオブジェクトを作成
 '[引数] ファイル名
 '[戻値] なし
@@ -189,30 +209,30 @@ End Sub
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-Public Sub CreateFromPixels(ByRef Pixels() As TRGBQuad)
+Public Sub CreateFromPixels(ByRef Pixels() As Long)
     Dim lngWidth  As Long
     Dim lngHeight As Long
     lngWidth = UBound(Pixels, 1)
     lngHeight = UBound(Pixels, 2)
     
     'GdiImageオブジェクトを作成
-    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, 0, PixelFormat32bppARGB, ByVal 0&, FGdiImage) <> S_OK Then
+    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, lngWidth * 4, PixelFormat32bppARGB, Pixels(1, 1), FGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
     
-    Dim BmpData As BITMAPDATA
-    With BmpData
-        .Width = lngWidth
-        .Height = lngHeight
-        .PixelFormat = PixelFormat32bppARGB
-        .scan0 = VarPtr(Pixels(1, 1))
-        .stride = lngWidth * 4
-    End With
-    If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeWrite, PixelFormat32bppARGB, BmpData) <> S_OK Then
-        Call Err.Raise(513, "GdipBitmapLockBitsエラー")
-    End If
-    Call GdipBitmapUnlockBits(FGdiImage, BmpData)
+'    Dim BmpData As BITMAPDATA
+'    With BmpData
+'        .Width = lngWidth
+'        .Height = lngHeight
+'        .PixelFormat = PixelFormat32bppARGB
+'        .scan0 = VarPtr(Pixels(1, 1))
+'        .stride = lngWidth * 4
+'    End With
+'    If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeWrite, PixelFormat32bppARGB, BmpData) <> S_OK Then
+'        Call Err.Raise(513, "GdipBitmapLockBitsエラー")
+'    End If
+'    Call GdipBitmapUnlockBits(FGdiImage, BmpData)
 
 '    Dim x As Long, y As Long
 '    For x = 1 To lngWidth
@@ -223,31 +243,11 @@ Public Sub CreateFromPixels(ByRef Pixels() As TRGBQuad)
 End Sub
 
 '*****************************************************************************
-'[概要] 画像の幅
-'[引数] なし
-'*****************************************************************************
-Public Property Get Width() As Long
-    Dim lngWidth As Long
-    Call GdipGetImageWidth(FGdiImage, lngWidth)
-    Width = lngWidth
-End Property
-
-'*****************************************************************************
-'[概要] 画像の高さ
-'[引数] なし
-'*****************************************************************************
-Public Property Get Height() As Long
-    Dim lngHeight As Long
-    Call GdipGetImageHeight(FGdiImage, lngHeight)
-    Height = lngHeight
-End Property
-
-'*****************************************************************************
 '[概要] Pixel情報からGdiImageオブジェクトを作成
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-Public Sub ToPixels(ByRef Pixels() As TRGBQuad)
+Public Sub ToPixels(ByRef Pixels() As Long)
     Dim lngWidth  As Long
     Dim lngHeight As Long
     lngWidth = Width

@@ -178,7 +178,7 @@ Private Const CF_UNICODETEXT = 13
 '*****************************************************************************
 'クラス内ユーザー定義
 '*****************************************************************************
-Private FPixels() As TRGBQuad
+Private FPixels() As Long
 Private FWidth As Long
 Private FHeight As Long
 
@@ -214,7 +214,7 @@ End Property
 '[戻値] なし
 '*****************************************************************************
 Private Sub Transpose()
-    ReDim work(1 To FHeight, 1 To FWidth) As TRGBQuad
+    ReDim work(1 To FHeight, 1 To FWidth) As Long
     Dim x As Long, y As Long
     For x = 1 To FHeight
         For y = 1 To FWidth
@@ -234,7 +234,7 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Public Sub FlipHorizontal()
-    ReDim work(1 To FWidth, 1 To FHeight) As TRGBQuad
+    ReDim work(1 To FWidth, 1 To FHeight) As Long
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
@@ -460,7 +460,7 @@ Public Sub GetPixelsFromRange(ByRef objRange As Range)
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
-            FPixels(x, y) = CellToColor(objRange.Cells(y, x))
+            FPixels(x, y) = CellToRGBQuad(objRange.Cells(y, x))
         Next
     Next
 End Sub
@@ -479,7 +479,7 @@ Public Sub SetPixelsToRange(ByVal objRange As Range)
     Dim x As Long, y As Long
     For y = 1 To FHeight
         For x = 1 To FWidth
-            Call ColorToCell(objRange.Cells(y, x), FPixels(x, y), False)
+            Call RGBQuadToCell(objRange.Cells(y, x), FPixels(x, y), False)
         Next
     Next
 End Sub
@@ -565,7 +565,7 @@ Private Function MakeMaskBits(ByRef MaskBits() As Byte) As Long
     
     For y = 0 To FHeight - 1
         For x = 1 To FWidth
-            If FPixels(x, y + 1).Alpha = 0 Then
+            If RGBQuadToAlpha(FPixels(x, y + 1)) = 0 Then
                 MaskWork(y * WidhBit + x) = 1
             End If
         Next
@@ -698,9 +698,9 @@ End Function
 '[戻値] なし
 '*****************************************************************************
 Public Sub Fill(ByVal x As Long, ByVal y As Long, ByRef objColorCell As Range)
-    Dim DstColor As TRGBQuad
-    DstColor = CellToColor(objColorCell)
-    If SameColor(FPixels(x, y), DstColor) Then
+    Dim DstColor As Long
+    DstColor = CellToRGBQuad(objColorCell)
+    If FPixels(x, y) = DstColor Then
         Exit Sub
     End If
     
@@ -711,7 +711,7 @@ Public Sub Fill(ByVal x As Long, ByVal y As Long, ByRef objColorCell As Range)
     Dim yy As Long
     For xx = 1 To FWidth
         For yy = 1 To FHeight
-            If SameColor(FPixels(xx, yy), FPixels(x, y)) Then
+            If FPixels(xx, yy) = FPixels(x, y) Then
                 '開始セルと同色のセルに1を設定
                 Pixels(xx, yy) = 1
             End If
@@ -821,7 +821,7 @@ Private Sub SetNoAlpha()
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
-            FPixels(x, y).Alpha = 255 '不透明
+            FPixels(x, y) = FPixels(x, y) Or &HFF  '不透明
         Next
     Next
 End Sub
@@ -835,7 +835,7 @@ Private Function HasAlpha() As Boolean
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
-            If FPixels(x, y).Alpha <> 0 Then
+            If RGBQuadToAlpha(FPixels(x, y)) <> 0 Then
                 HasAlpha = True
                 Exit Function
             End If
