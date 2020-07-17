@@ -16,6 +16,8 @@ Public Type TRGBQuad
     Alpha   As Byte
 End Type
 
+Public Const CTRANSPARENT = &HFFFFFF
+
 '型キャスト用
 Public Type TLong
     Long   As Long
@@ -33,7 +35,7 @@ Public Function CellToRGBQuad(ByRef objCell As Range) As Long
         Select Case .ColorIndex
         Case xlNone, xlAutomatic
             '透明
-            CellToRGBQuad = OleColorToRGBQuad(&HFFFFFF, 0)
+            CellToRGBQuad = CTRANSPARENT
         Case Else
             Alpha = &HFF '不透明
             '半透明かどうか
@@ -141,7 +143,7 @@ End Function
 '[引数] SrcColor:変更前の色、RGBαのそれぞれの増減値
 '[戻値] 変更後の色
 '*****************************************************************************
-Public Function AdjustColor(ByRef SrcColor As Long, ByVal Red As Long, ByVal Green As Long, ByVal Blue As Long, ByVal Alpha As Long) As Long
+Public Function AdjustColor(ByVal SrcColor As Long, ByVal Red As Long, ByVal Green As Long, ByVal Blue As Long, ByVal Alpha As Long) As Long
     Dim SrcRGBQuad As TRGBQuad
     Dim RGBQuad As TRGBQuad
     Dim Color   As TLong
@@ -172,7 +174,7 @@ End Function
 '[引数] SrcColor:変更前の色、HSLのそれぞれの増減値
 '[戻値] 変更後の色
 '*****************************************************************************
-Public Function UpDownHSL(ByRef SrcColor As Long, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long, Optional LeVel As Long = 1) As Long
+Public Function UpDownHSL(ByVal SrcColor As Long, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long, Optional LeVel As Long = 1) As Long
     Dim H As Double '0～360
     Dim S As Double '0～255
     Dim L As Double '0～255
@@ -312,18 +314,11 @@ Private Sub HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Double, By
     End If
 End Sub
 
-''*****************************************************************************
-''[概要] TRGBQuad型をLong型にキャストする(GDI+の関数の引数に渡すため)
-''[引数] TRGBQuad
-''[戻値] Long型
-''*****************************************************************************
-'Public Function CastARGB(ByRef ARGB As TRGBQuad) As Long
-'    Dim Color As TLong
-'    LSet Color = ARGB
-'    CastARGB = Color.Long
-'End Function
-
-
+'*****************************************************************************
+'[概要] TRGBQuad型のα値を取得する
+'[引数] TRGBQuad
+'[戻値] α値
+'*****************************************************************************
 Public Function RGBQuadToAlpha(ByVal lngRGBQuad As Long) As Byte
     Dim Color As TLong
     Dim RGBQuad As TRGBQuad

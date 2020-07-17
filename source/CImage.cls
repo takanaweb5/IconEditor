@@ -821,7 +821,7 @@ Private Sub SetNoAlpha()
     Dim x As Long, y As Long
     For x = 1 To FWidth
         For y = 1 To FHeight
-            FPixels(x, y) = FPixels(x, y) Or &HFF  '•s“§–¾
+            FPixels(x, y) = FPixels(x, y) Or &HFF000000 '•s“§–¾
         Next
     Next
 End Sub

@@ -831,10 +831,10 @@ Private Sub PasteSub(ByVal Color As Long, ByRef objCopyRange As Range, ByRef obj
     If GetTmpControl("C3").State Then
         If GetTmpControl("C1").State Then
             '違う色のセルを透明化
-            Call RGBQuadToCell(objDiffRange, OleColorToRGBQuad(&HFFFFFF, 0), False)
+            Call RGBQuadToCell(objDiffRange, CTRANSPARENT, False)
         Else
             '同じ色のセルを透明化
-            Call RGBQuadToCell(objSameRange, OleColorToRGBQuad(&HFFFFFF, 0), False)
+            Call RGBQuadToCell(objSameRange, CTRANSPARENT, False)
         End If
     End If
     
@@ -1178,7 +1178,7 @@ On Error GoTo ErrHandle
     
     '透明色
     If Not (objZero Is Nothing) Then
-        Call RGBQuadToCell(objZero, OleColorToRGBQuad(&HFFFFFF, 0), True)
+        Call RGBQuadToCell(objZero, CTRANSPARENT, True)
     End If
     Call Selection.Select
     Call SetOnUndo("数値から色を設定")
@@ -1301,7 +1301,7 @@ On Error Resume Next
     
     '透明色
     If Not (objZero Is Nothing) Then
-        Call RGBQuadToCell(objZero, OleColorToRGBQuad(&HFFFFFF, 0), True)
+        Call RGBQuadToCell(objZero, CTRANSPARENT, True)
     End If
     
     '不透明色
