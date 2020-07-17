@@ -144,29 +144,27 @@ End Function
 '[ñﬂíl] ïœçXå„ÇÃêF
 '*****************************************************************************
 Public Function AdjustColor(ByVal SrcColor As Long, ByVal Red As Long, ByVal Green As Long, ByVal Blue As Long, ByVal Alpha As Long) As Long
-    Dim SrcRGBQuad As TRGBQuad
     Dim RGBQuad As TRGBQuad
     Dim Color   As TLong
     Color.Long = SrcColor
-    LSet SrcRGBQuad = Color
     LSet RGBQuad = Color
     With RGBQuad
         If Red + Green + Blue + Alpha > 0 Then
             'ëùâ¡ÇÃéû
-            .Red = WorksheetFunction.min(255, SrcRGBQuad.Red + Red)
-            .Green = WorksheetFunction.min(255, SrcRGBQuad.Green + Green)
-            .Blue = WorksheetFunction.min(255, SrcRGBQuad.Blue + Blue)
-            .Alpha = WorksheetFunction.min(255, SrcRGBQuad.Alpha + Alpha)
+            .Red = WorksheetFunction.min(255, .Red + Red)
+            .Green = WorksheetFunction.min(255, .Green + Green)
+            .Blue = WorksheetFunction.min(255, .Blue + Blue)
+            .Alpha = WorksheetFunction.min(255, .Alpha + Alpha)
         Else
             'å∏è≠ÇÃéû
-            .Red = WorksheetFunction.max(0, SrcRGBQuad.Red + Red)
-            .Green = WorksheetFunction.max(0, SrcRGBQuad.Green + Green)
-            .Blue = WorksheetFunction.max(0, SrcRGBQuad.Blue + Blue)
-            .Alpha = WorksheetFunction.max(0, SrcRGBQuad.Alpha + Alpha)
+            .Red = WorksheetFunction.max(0, .Red + Red)
+            .Green = WorksheetFunction.max(0, .Green + Green)
+            .Blue = WorksheetFunction.max(0, .Blue + Blue)
+            .Alpha = WorksheetFunction.max(0, .Alpha + Alpha)
         End If
     End With
-
-    AdjustColor = SrcColor
+    LSet Color = RGBQuad
+    AdjustColor = Color.Long
 End Function
 
 '*****************************************************************************
