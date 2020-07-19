@@ -47,6 +47,20 @@ Private Type Guid
     Data4(7) As Byte
 End Type
 
+Private Type BITMAPINFOHEADER
+    size          As Long
+    Width         As Long
+    Height        As Long
+    Planes        As Integer
+    BitCount      As Integer
+    Compression   As Long
+    SizeImage     As Long
+    XPelsPerMeter As Long
+    YPelsPerMeter As Long
+    ClrUsed       As Long
+    ClrImportant  As Long
+End Type
+
 Private Type BITMAPDATA
     Width       As Long
     Height      As Long
@@ -55,6 +69,13 @@ Private Type BITMAPDATA
     scan0       As LongPtr
     Reserved    As LongPtr
 End Type
+
+Private Const DIB_RGB_COLORS = 0&
+Private Declare PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As LongPtr) As LongPtr
+Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hwnd As Long) As Long
+Private Declare PtrSafe Function DeleteDC Lib "gdi32" (ByVal hDC As LongPtr) As Long
+Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hwnd As LongPtr, ByVal hDC As LongPtr) As Long
+Private Declare PtrSafe Function GetDIBits Lib "gdi32" (ByVal aHDC As LongPtr, ByVal hBitmapptr As LongPtr, ByVal nStartScan As Long, ByVal nNumScans As Long, ByRef lpBits As Any, ByRef lpBI As Any, ByVal wUsage As Long) As Long
 
 Private Declare PtrSafe Function GdipSaveImageToStream Lib "gdiplus" (ByVal image As LongPtr, ByVal Stream As LongPtr, ByRef clsidEncoder As Guid, ByVal encoderParams As LongPtr) As Long
 Private Declare PtrSafe Function GdipSaveImageToFile Lib "gdiplus.dll" (ByVal image As LongPtr, ByVal Filename As LongPtr, ByRef clsidEncoder As Guid, ByVal encoderParams As LongPtr) As Long
@@ -142,9 +163,8 @@ End Sub
 '[概要] デストラクタ
 '*****************************************************************************
 Private Sub Class_Terminate()
-    If FGdiPlus <> 0 Then
-        Call GdiplusShutdown(FGdiPlus)
-    End If
+    If FGdiImage <> 0 Then Call GdipDisposeImage(FGdiImage)
+    If FGdiPlus <> 0 Then Call GdiplusShutdown(FGdiPlus)
 End Sub
 
 '*****************************************************************************
@@ -172,11 +192,17 @@ End Property
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-Public Sub CreateFromFile(ByVal strFile As String)
+Public Sub CreateFromFile(ByVal strFile As String, Optional lngWidth As Long = 0, Optional lngHeight As Long = 0)
     If GdipLoadImageFromFile(ByVal StrPtr(strFile), FGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipLoadImageFromFileエラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
+    
+    If lngWidth <> 0 And lngHeight <> 0 Then
+        If lngWidth <> Me.Width And lngHeight <> Me.Height Then
+            Call Me.Resize(lngWidth, lngHeight)
+        End If
+    End If
 End Sub
 
 '*****************************************************************************
@@ -184,25 +210,73 @@ End Sub
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-Public Sub CreateFromStream(ByVal Stream As IUnknown)
+Public Sub CreateFromStream(ByVal Stream As IUnknown, Optional lngWidth As Long = 0, Optional lngHeight As Long = 0)
     If GdipLoadImageFromStream(ObjPtr(Stream), FGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipLoadImageFromStreamエラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
+    
+    If lngWidth <> 0 And lngHeight <> 0 Then
+        If lngWidth <> Me.Width And lngHeight <> Me.Height Then
+            Call Me.Resize(lngWidth, lngHeight)
+        End If
+    End If
 End Sub
 
 '*****************************************************************************
-'※アルファチャネルが反映されないため却下
 '[概要] ビットマップハンドルからGdiImageオブジェクトを作成
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-'Public Sub CreateFromHBITMAP(ByVal hBitmap As LongPtr)
+Public Sub CreateFromHBITMAP(ByVal hBitmap As LongPtr, Optional lngWidth As Long = 0, Optional lngHeight As Long = 0)
+    Dim Pixels() As Long
+    Call GetPixelsFromHBITMAP(hBitmap, Pixels())
+    Call CreateFromPixels(Pixels())
+    
+    If lngWidth <> 0 And lngHeight <> 0 Then
+        If lngWidth <> Me.Width And lngHeight <> Me.Height Then
+            Call Me.Resize(lngWidth, lngHeight)
+        End If
+    End If
+
+'    ※アルファチャネルが反映されないため却下
 '    If GdipCreateBitmapFromHBITMAP(hBitmap, 0&, FGdiImage) <> S_OK Then
 '        Call Err.Raise(513, "GdipCreateBitmapFromHBITMAPエラー")
 '    End If
-'    Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
-'End Sub
+End Sub
+
+'*****************************************************************************
+'[概要] hBitmapからPixelsにアルファチャネルありの色を設定する
+'[引数] Bitmapハンドル、戻値:Pixels
+'[戻値] なし
+'*****************************************************************************
+Private Sub GetPixelsFromHBITMAP(ByVal hBitmap As LongPtr, ByRef Pixels() As Long)
+On Error GoTo Finalization
+    Dim hDC   As LongPtr
+    Dim BmpInfHeader   As BITMAPINFOHEADER
+    hDC = CreateCompatibleDC(0)
+    BmpInfHeader.size = 40 '40固定
+
+    '幅と高さのみ取得
+    Dim lngHeight  As Long
+    Call GetDIBits(hDC, hBitmap, 0, 0, ByVal 0, BmpInfHeader, DIB_RGB_COLORS)
+    lngHeight = Abs(BmpInfHeader.Height)
+    ReDim Pixels(1 To BmpInfHeader.Width, 1 To lngHeight)
+    
+    With BmpInfHeader
+        .Height = -lngHeight  'ボトムアップからトップダウンに変更
+        .Planes = 1 '常に1
+        .BitCount = 32 'Bit
+        .Compression = 0 'BI_RGB(無圧縮)
+        .SizeImage = 0 '省略可
+    End With
+
+    'Pixels()に値を設定
+    Call GetDIBits(hDC, hBitmap, 0, lngHeight, Pixels(1, 1), BmpInfHeader, DIB_RGB_COLORS)
+Finalization:
+    If hDC <> 0 Then Call DeleteDC(hDC)
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
+End Sub
 
 '*****************************************************************************
 '[概要] Pixel情報からGdiImageオブジェクトを作成
@@ -215,44 +289,48 @@ Public Sub CreateFromPixels(ByRef Pixels() As Long)
     lngWidth = UBound(Pixels, 1)
     lngHeight = UBound(Pixels, 2)
     
+    'GdipDisposeImage(FGdiImage)するまでPixels()の領域を共有するため却下
+    '※CreateFromHBITMAPから実行される時は、GdipDisposeImageの前にPixels()が解放される
+'    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, lngWidth * 4, PixelFormat32bppARGB, Pixels(1, 1), FGdiImage) <> S_OK Then
+    
     'GdiImageオブジェクトを作成
-    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, lngWidth * 4, PixelFormat32bppARGB, Pixels(1, 1), FGdiImage) <> S_OK Then
+    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, 0, PixelFormat32bppARGB, ByVal 0, FGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
     
-'    Dim BmpData As BITMAPDATA
-'    With BmpData
-'        .Width = lngWidth
-'        .Height = lngHeight
-'        .PixelFormat = PixelFormat32bppARGB
-'        .scan0 = VarPtr(Pixels(1, 1))
-'        .stride = lngWidth * 4
-'    End With
-'    If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeWrite, PixelFormat32bppARGB, BmpData) <> S_OK Then
-'        Call Err.Raise(513, "GdipBitmapLockBitsエラー")
-'    End If
-'    Call GdipBitmapUnlockBits(FGdiImage, BmpData)
+    Dim BmpData As BITMAPDATA
+    With BmpData
+        .Width = lngWidth
+        .Height = lngHeight
+        .PixelFormat = PixelFormat32bppARGB
+        .scan0 = VarPtr(Pixels(1, 1))
+        .stride = lngWidth * 4
+    End With
+    If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeWrite, PixelFormat32bppARGB, BmpData) <> S_OK Then
+        Call Err.Raise(513, "GdipBitmapLockBitsエラー")
+    End If
+    Call GdipBitmapUnlockBits(FGdiImage, BmpData)
 
 '    Dim x As Long, y As Long
 '    For x = 1 To lngWidth
 '        For y = 1 To lngHeight
-'            Call GdipBitmapSetPixel(FGdiImage, x - 1, y - 1, CastARGB(Pixels(x, y)))
+'            Call GdipBitmapSetPixel(FGdiImage, x - 1, y - 1, Pixels(x, y))
 '        Next
 '    Next
 End Sub
 
 '*****************************************************************************
-'[概要] Pixel情報からGdiImageオブジェクトを作成
-'[引数] ファイル名
+'[概要] GdiImageオブジェクトからPixel情報を設定
+'[引数] 戻値：Pixel情報
 '[戻値] なし
 '*****************************************************************************
 Public Sub ToPixels(ByRef Pixels() As Long)
     Dim lngWidth  As Long
     Dim lngHeight As Long
-    lngWidth = Width
-    lngHeight = Height
-    ReDim Pixels(1 To Width, 1 To Height)
+    lngWidth = Me.Width
+    lngHeight = Me.Height
+    ReDim Pixels(1 To lngWidth, 1 To lngHeight)
     
     Dim BmpData As BITMAPDATA
     With BmpData

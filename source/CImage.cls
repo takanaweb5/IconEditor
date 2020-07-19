@@ -279,9 +279,9 @@ End Sub
 '[引数] ファイル名
 '[戻値] なし
 '*****************************************************************************
-Public Sub LoadImageFromFile(ByVal strFile As String)
+Public Sub LoadImageFromFile(ByVal strFile As String, Optional lngWidth As Long = 0, Optional lngHeight As Long = 0)
     Dim Gdip As New CGdiplus
-    Call Gdip.CreateFromFile(strFile)
+    Call Gdip.CreateFromFile(strFile, lngWidth, lngHeight)
     Call Me.SetSize(Gdip.Width, Gdip.Height)
     Call Gdip.ToPixels(FPixels())
     Call SetNoAlpha
@@ -333,38 +333,25 @@ Public Sub SaveImageToFile(ByVal strFile As String)
 End Sub
 
 '*****************************************************************************
-'[概要] 画像のサイズを変更する
-'[引数] 新しいサイズ
-'[戻値] なし
-'*****************************************************************************
-Public Sub Resize(ByVal lngWidth As Long, ByVal lngHeight As Long)
-    If FWidth = lngWidth And FHeight = lngHeight Then
-        Exit Sub
-    End If
-
-    Dim Gdip As New CGdiplus
-    Call Gdip.CreateFromPixels(FPixels())
-    Call Gdip.Resize(lngWidth, lngHeight)
-    Call Me.SetSize(lngWidth, lngHeight)
-    Call Gdip.ToPixels(FPixels())
-    Call SetNoAlpha
-End Sub
-
-'*****************************************************************************
 '[概要] BMP形式の画像をクリップボードから読込む
 '[引数] なし
 '[戻値] なし
 '*****************************************************************************
-Public Sub LoadBMPFromClipbord()
+Public Sub LoadBMPFromClipbord(Optional lngWidth As Long = 0, Optional lngHeight As Long = 0)
     If OpenClipboard(0) = 0 Then Exit Sub
 On Error GoTo Finalization
     Dim hBitmap As LongPtr
     hBitmap = GetClipboardData(CF_BITMAP)
     If hBitmap = 0 Then GoTo Finalization
-    Call Me.GetPixelsFromHBITMAP(hBitmap)
+    
+    Dim Gdip As New CGdiplus
+    Call Gdip.CreateFromHBITMAP(hBitmap, lngWidth, lngHeight)
+    Call Me.SetSize(Gdip.Width, Gdip.Height)
+    Call Gdip.ToPixels(FPixels())
     Call SetNoAlpha
 Finalization:
     Call CloseClipboard
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
 End Sub
 
 '*****************************************************************************
@@ -409,6 +396,7 @@ On Error GoTo Finalization
     Call SaveBMPToClipbord
 Finalization:
     Call CloseClipboard
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
 End Sub
 
 '*****************************************************************************
@@ -472,7 +460,6 @@ End Sub
 '*****************************************************************************
 Public Sub SetPixelsToRange(ByVal objRange As Range)
     Dim objCell As Range
-    Dim Color  As TRGBQuad
     
     '高速化のためいったん書式をクリア
     Call ClearRange(objRange.Resize(FHeight, FWidth))
@@ -549,6 +536,7 @@ On Error GoTo Finalization
     Call FlipHorizontal '反転を元に戻す
 Finalization:
     If blnOpen Then Close #File
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
 End Sub
 
 '*****************************************************************************
@@ -625,6 +613,7 @@ On Error GoTo Finalization
     Call FlipHorizontal '反転を元に戻す
 Finalization:
     If blnOpen Then Close #File
+    If Err.Number <> 0 Then Call Err.Raise(Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext)
 End Sub
 
 '*****************************************************************************
@@ -633,45 +622,17 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Public Sub GetPixelsFromHBITMAP(ByVal hBitmap As LongPtr)
-On Error GoTo Finalization
-    Dim hDC   As LongPtr
-    Dim BmpInfHeader   As BITMAPINFOHEADER
-    hDC = CreateCompatibleDC(0)
-    BmpInfHeader.size = 40 '40固定
-
-    '幅と高さのみ取得
-    Call GetDIBits(hDC, hBitmap, 0, 0, ByVal 0, BmpInfHeader, DIB_RGB_COLORS)
-    Call SetSize(BmpInfHeader.Width, Abs(BmpInfHeader.Height))
-
-    With BmpInfHeader
-        .Height = -FHeight  'ボトムアップからトップダウンに変更
-        .Planes = 1 '常に1
-        .BitCount = 32 'Bit
-        .Compression = 0 'BI_RGB(無圧縮)
-        .SizeImage = 0 '省略可
-    End With
-
-    'FPixels()に値を設定
-    Call GetDIBits(hDC, hBitmap, 0, FHeight, FPixels(1, 1), BmpInfHeader, DIB_RGB_COLORS)
-Finalization:
-    If hDC <> 0 Then Call DeleteDC(hDC)
+    Dim Gdip As New CGdiplus
+    Call Gdip.CreateFromHBITMAP(hBitmap)
+    Call Me.SetSize(Gdip.Width, Gdip.Height)
+    Call Gdip.ToPixels(FPixels())
+    Call SetNoAlpha
 End Sub
 
 '*****************************************************************************
-'※アルファチャネルが反映されないため却下
-'*****************************************************************************
-'Public Sub GetPixelsFromHBITMAP(ByVal hBitmap As LongPtr)
-'    Dim Gdip As New CGdiplus
-'    Call Gdip.CreateFromHBITMAP(hBitmap)
-'    Call Me.SetSize(Gdip.Width, Gdip.Height)
-'    Call Gdip.ToPixels(FPixels())
-'    Call SetNoAlpha
-'End Sub
-
-'*****************************************************************************
-'[概要] IPictureに変換する
-'[引数] Bitmapハンドル
-'[戻値] なし
+'[概要] IPictureに設定する
+'[引数] なし
+'[戻値] IPicture
 '*****************************************************************************
 Public Function SetToIPicture() As IPicture
     Dim Gdip As New CGdiplus
@@ -707,8 +668,7 @@ Public Sub Fill(ByVal x As Long, ByVal y As Long, ByRef objColorCell As Range)
     'ワーク用の2次元配列を確保(上下左右に壁用のマスを確保する)
     '格納する値(1:開始セルと同色のセル、2:塗潰し完了セル、0:対象外の色のセルまたは壁)
     ReDim Pixels(0 To FWidth + 1, 0 To FHeight + 1) As Byte
-    Dim xx As Long
-    Dim yy As Long
+    Dim xx As Long, yy As Long
     For xx = 1 To FWidth
         For yy = 1 To FHeight
             If FPixels(xx, yy) = FPixels(x, y) Then
@@ -764,8 +724,7 @@ Private Function FillCell(ByRef x As Long, ByRef y As Long, ByRef Pixels() As By
     End If
     
     '一筆書きが行詰った時、次の起点となる座標を(x,y)に設定する
-    Dim xx As Long
-    Dim yy As Long
+    Dim xx As Long, yy As Long
     For xx = 1 To FWidth
         For yy = 1 To FHeight
             If Pixels(xx, yy) = 1 Then '開始セルと同じ色

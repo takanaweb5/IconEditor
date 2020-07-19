@@ -131,15 +131,9 @@ On Error GoTo ErrHandle
     End If
     
     Dim img As New CImage
-    Call img.LoadImageFromFile(vDBName)
+    Call img.LoadImageFromFile(vDBName, lngWidth, lngHeight)
     If DestRange Is Nothing Then
         Set DestRange = ActiveCell.Resize(img.Height, img.Width)
-    Else
-        If lngWidth > img.Width Or lngHeight > img.Height Then
-            Set DestRange = DestRange.Resize(img.Height, img.Width)
-        Else
-            Call img.Resize(lngWidth, lngHeight)
-        End If
     End If
     
     Application.ScreenUpdating = False
@@ -334,15 +328,9 @@ On Error GoTo ErrHandle
     End If
     
     Dim img As New CImage
-    Call img.LoadBMPFromClipbord
+    Call img.LoadBMPFromClipbord(lngWidth, lngHeight)
     If DestRange Is Nothing Then
         Set DestRange = ActiveCell.Resize(img.Height, img.Width)
-    Else
-        If lngWidth > img.Width Or lngHeight > img.Height Then
-            Set DestRange = DestRange.Resize(img.Height, img.Width)
-        Else
-            Call img.Resize(lngWidth, lngHeight)
-        End If
     End If
     
     Application.ScreenUpdating = False
@@ -432,8 +420,7 @@ On Error GoTo ErrHandle
     Call objWkShape.Copy
     
     Dim img As New CImage
-    Call img.LoadBMPFromClipbord
-    Call img.Resize(lngWidth, lngHeight)
+    Call img.LoadBMPFromClipbord(lngWidth, lngHeight)
     Application.ScreenUpdating = False
     Call SaveUndoInfo(DestRange)
     Call img.SetPixelsToRange(DestRange)
