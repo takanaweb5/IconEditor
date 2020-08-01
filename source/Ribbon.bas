@@ -261,9 +261,9 @@ Private Function GetTips(control As IRibbonControl, ByVal lngType As Long) As St
         Result(2) = "透明色の強調"
         Result(3) = "選択されたセル範囲で" & vbCrLf & "透明色のセルを網掛けで強調し、" & vbCrLf & "以外ののセルは網掛けを消します"
     Case 33
-        Result(1) = "塗潰し"
-        Result(2) = "塗潰し"
-        Result(3) = "選択されたセル範囲を対象に塗潰します"
+        Result(1) = "塗りつぶし"
+        Result(2) = "塗りつぶし"
+        Result(3) = "選択されたセル範囲を対象に塗りつぶします"
     Case 34
         Result(1) = "色の置換"
         Result(2) = "色の置換"
@@ -520,7 +520,7 @@ Sub onAction(control As IRibbonControl)
     Case 32
         Call 透明色強調
     Case 33
-        Call 塗潰し
+        Call 塗りつぶし
     Case 34
         Call 色の置換
     Case 35

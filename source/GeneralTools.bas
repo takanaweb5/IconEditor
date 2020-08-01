@@ -187,6 +187,26 @@ Public Function UnionRange(ByRef objRange1 As Range, ByRef objRange2 As Range) A
 End Function
 
 '*****************************************************************************
+'[概要] 領域が一致するか判定
+'[引数] 対象領域アドレス
+'[戻値] True:一致
+'*****************************************************************************
+Public Function IsSameRange(ByRef strRange1 As String, ByRef strRange2 As String) As Boolean
+    If strRange1 = "" Or strRange2 = "" Then
+        Exit Function
+    End If
+    
+    Dim objRange1 As Range
+    Dim objRange2 As Range
+    Set objRange1 = Range(strRange1)
+    Set objRange2 = Range(strRange2)
+    IsSameRange = MinusRange(objRange1, objRange2) Is Nothing
+    If IsSameRange Then
+        IsSameRange = MinusRange(objRange2, objRange1) Is Nothing
+    End If
+End Function
+
+'*****************************************************************************
 '[概要] 領域から領域を、除外する
 '       Ａ－Ｂ = Ａ∩!Ｂ
 '       !Ｂ = !(B1∪B2∪B3...∪Bn) = !B1∩!B2∩!B3...∩!Bn
@@ -337,4 +357,21 @@ Public Sub SaveResourceToFile(ByVal strFilename As String, ByRef objRow As Range
     Put #File, , Data
     Close #File
 End Sub
+
+'*****************************************************************************
+'[概要] Undoボタンの情報を取得する
+'[引数] なし
+'[戻値] UndoボタンのTooltipText
+'*****************************************************************************
+Public Function GetUndoStr() As String
+    With CommandBars.FindControl(, 128) 'Undoボタン
+        If .Enabled Then
+            If .ListCount = 1 Then
+                'Undoが1種類の時のUndoコマンド
+                GetUndoStr = Trim(.List(1))
+            End If
+        End If
+    End With
+End Function
+
 

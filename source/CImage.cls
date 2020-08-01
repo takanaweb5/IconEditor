@@ -654,117 +654,125 @@ Public Function SetToIPicture() As IPicture
 End Function
 
 '*****************************************************************************
-'[概要] 塗潰す
-'[引数] x,y:塗潰し開始位置、objColorCell塗潰し色のセル
+'[概要] 塗りつぶす
+'[引数] x,y:塗りつぶし開始位置、DstColor:塗りつぶし色
 '[戻値] なし
 '*****************************************************************************
-Public Sub Fill(ByVal x As Long, ByVal y As Long, ByRef objColorCell As Range)
-    Dim DstColor As Long
-    DstColor = CellToRGBQuad(objColorCell)
-    If FPixels(x, y) = DstColor Then
-        Exit Sub
-    End If
-    
+Public Sub Fill(ByVal x As Long, ByVal y As Long, ByVal DstColor As Long)
     'ワーク用の2次元配列を確保(上下左右に壁用のマスを確保する)
-    '格納する値(1:開始セルと同色のセル、2:塗潰し完了セル、0:対象外の色のセルまたは壁)
+    '格納する値(0:開始セルと同色のセル、1:塗りつぶし完了セル、9:対象外の色のセルまたは壁)
     ReDim Pixels(0 To FWidth + 1, 0 To FHeight + 1) As Byte
     Dim xx As Long, yy As Long
+    '配列の初期化
+    For xx = 0 To FWidth + 1
+        For yy = 0 To FHeight + 1
+            Pixels(xx, yy) = 9
+        Next
+    Next
     For xx = 1 To FWidth
         For yy = 1 To FHeight
             If FPixels(xx, yy) = FPixels(x, y) Then
-                '開始セルと同色のセルに1を設定
-                Pixels(xx, yy) = 1
+                '開始セルと同じ色のセルに0を設定
+                Pixels(xx, yy) = 0
             End If
         Next
     Next
-
-    '塗潰し対象セル全てに2を設定する
-    Do While FillCell(x, y, Pixels()): Loop
     
-    '塗潰し対象セルに該当色を設定
+'    Dim dblTime As Double
+'    Dim cnt As Long
+'    cnt = 0
+'    Call MsgBox("開始")
+'    dblTime = Timer()
+    '塗りつぶし対象セル全てに1を設定する
+    Call FillCell(x, y, Pixels())
+'    Call MsgBox("実行時間：" & (Timer() - dblTime) * 1000 & " ミリ秒" & "　回数：" & cnt)
+    
+    '塗りつぶし対象セルに該当色を設定
     For xx = 1 To FWidth
         For yy = 1 To FHeight
-            If Pixels(xx, yy) = 2 Then
+            If Pixels(xx, yy) = 1 Then
                 FPixels(xx, yy) = DstColor
             End If
         Next
     Next
-Finalization:
 End Sub
 
 '*****************************************************************************
-'[概要] 対象座標(x,y)を塗潰し、一筆書きの次の座標を(x,y)に設定する
-'       一筆書きが行詰れば次の起点となる座標を(x,y)に設定する
-'[引数] x,y:座標、Pixels():塗潰し用の配列
-'[戻値] True：次に塗潰すセルあり
+'[概要] 一筆書きを実行し、行詰れば次の起点となるセルを検索しそのセルから一筆書きを実行する
+'       起点となるセルが見つからなくなるまで、一筆書きを続ける
+'[引数] x,y:座標、Pixels():塗りつぶし用の配列
+'[戻値] なし
 '*****************************************************************************
-Private Function FillCell(ByRef x As Long, ByRef y As Long, ByRef Pixels() As Byte) As Boolean
-    FillCell = True
-    Pixels(x, y) = 2 '塗潰し
+Private Sub FillCell(ByVal x As Long, ByVal y As Long, ByRef Pixels() As Byte)
+    '一筆書きを実行
+    Call Onestroke(x, y, Pixels())
     
-    '上に自分と同じ色があるか
-    If Pixels(x, y - 1) = 1 Then
-        y = y - 1
-        Exit Function
-    End If
-    '下に自分と同じ色があるか
-    If Pixels(x, y + 1) = 1 Then
-        y = y + 1
-        Exit Function
-    End If
-    '右に自分と同じ色があるか
-    If Pixels(x + 1, y) = 1 Then
-        x = x + 1
-        Exit Function
-    End If
-    '左に自分と同じ色があるか
-    If Pixels(x - 1, y) = 1 Then
-        x = x - 1
-        Exit Function
-    End If
-    
-    '一筆書きが行詰った時、次の起点となる座標を(x,y)に設定する
-    Dim xx As Long, yy As Long
-    For xx = 1 To FWidth
-        For yy = 1 To FHeight
-            If Pixels(xx, yy) = 1 Then '開始セルと同じ色
-                '隣接するセルにすでに塗潰したセルがあるか
-                If Pixels(xx - 1, yy) = 2 Or _
-                   Pixels(xx + 1, yy) = 2 Or _
-                   Pixels(xx, yy - 1) = 2 Or _
-                   Pixels(xx, yy + 1) = 2 Then
-                    x = xx
-                    y = yy
-                    Exit Function
+    Dim blnContinue As Boolean
+    '起点となるセルが見つからなくなるまでLOOP
+    Do While True
+        blnContinue = False
+        For y = 1 To FHeight
+            For x = 1 To FWidth
+                If Pixels(x, y) = 0 Then '開始セルと同じ色
+                    '隣接するセルにすでに塗りつぶしたセルがあるか
+                    If Pixels(x - 1, y) = 1 Or _
+                       Pixels(x + 1, y) = 1 Or _
+                       Pixels(x, y - 1) = 1 Or _
+                       Pixels(x, y + 1) = 1 Then
+                        '起点となるセルから一筆書きを実行
+                        Call Onestroke(x, y, Pixels())
+                        blnContinue = True
+                    End If
                 End If
-            End If
+            Next
         Next
-    Next
-    
-    '次に塗潰せるセルなし
-    FillCell = False
-End Function
+        If Not blnContinue Then
+            Exit Sub
+        End If
+    Loop
+End Sub
 
-'以下は64×64ではスタックオーバーフローのため却下
-'Private Sub Fill2(ByVal x As Byte, ByVal y As Byte, ByRef Pixels() As Long)
-'    Pixels(x, y) = 2 '塗潰し
-'    '上に自分と同じ色があるか
-'    If Pixels(x, y - 1) = 1 Then
-'        Call Fill2(x, y - 1, Pixels()) 'あればその座標で再帰呼び出し
-'    End If
-'    '下に自分と同じ色があるか
-'    If Pixels(x, y + 1) = 1 Then
-'        Call Fill2(x, y + 1, Pixels())
-'    End If
-'    '右に自分と同じ色があるか
-'    If Pixels(x + 1, y) = 1 Then
-'        Call Fill2(x + 1, y, Pixels())
-'    End If
-'    '左に自分と同じ色があるか
-'    If Pixels(x - 1, y) = 1 Then
-'        Call Fill2(x - 1, y, Pixels())
-'    End If
-'End Sub
+'*****************************************************************************
+'[概要] 一筆書きを行詰るまで実行する
+'[引数] x,y:開始座標、Pixels():塗りつぶし用の配列
+'[戻値] なし
+'*****************************************************************************
+Private Sub Onestroke(ByVal x As Long, ByVal y As Long, ByRef Pixels() As Byte)
+    Do While True
+        Pixels(x, y) = 1 '塗りつぶし
+
+        '上に自分と同じ色があるか
+        If Pixels(x, y - 1) = 0 Then
+            y = y - 1
+        '下に自分と同じ色があるか
+        ElseIf Pixels(x, y + 1) = 0 Then
+            y = y + 1
+        '左に自分と同じ色があるか
+        ElseIf Pixels(x - 1, y) = 0 Then
+            x = x - 1
+        '右に自分と同じ色があるか
+        ElseIf Pixels(x + 1, y) = 0 Then
+            x = x + 1
+        Else
+            '左上に自分と同じ色があるか　かつ　隣接セルに塗りつぶしが完了したセルがあるか
+            If Pixels(x - 1, y - 1) = 0 And (Pixels(x - 1, y) = 1 Or Pixels(x, y - 1) = 1) Then
+                x = x - 1: y = y - 1
+            '左下に自分と同じ色があるか　かつ　隣接セルに塗りつぶしが完了したセルがあるか
+            ElseIf Pixels(x - 1, y + 1) = 0 And (Pixels(x - 1, y) = 1 Or Pixels(x, y + 1) = 1) Then
+                x = x - 1: y = y + 1
+            '右上に自分と同じ色があるか　かつ　隣接セルに塗りつぶしが完了したセルがあるか
+            ElseIf Pixels(x + 1, y - 1) = 0 And (Pixels(x + 1, y) = 1 Or Pixels(x, y - 1) = 1) Then
+                x = x + 1: y = y - 1
+            '右下に自分と同じ色があるか　かつ　隣接セルに塗りつぶしが完了したセルがあるか
+            ElseIf Pixels(x + 1, y + 1) = 0 And (Pixels(x + 1, y) = 1 Or Pixels(x, y + 1) = 1) Then
+                x = x + 1: y = y + 1
+            Else
+                '一筆書き終了
+                Exit Sub
+            End If
+        End If
+    Loop
+End Sub
 
 '*****************************************************************************
 '[概要] アルファチャンネルを使用しているマスがない時、すべてのα値を255にする

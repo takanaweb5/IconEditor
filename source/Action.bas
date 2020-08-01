@@ -843,11 +843,11 @@ End Sub
 
 
 '*****************************************************************************
-'[概要] 塗潰し
+'[概要] 塗りつぶし
 '[引数] なし
 '[戻値] なし
 '*****************************************************************************
-Public Sub 塗潰し()
+Public Sub 塗りつぶし()
 On Error GoTo ErrHandle
     Dim objSelection As Range
     If CheckSelection <> E_Range Then
@@ -865,7 +865,8 @@ On Error GoTo ErrHandle
     End If
     
     Dim objStartCell As Range
-    Set objStartCell = SelectCell("塗潰し開始セルを選択してください", ActiveCell)
+    Dim SrcColor As Long
+    Set objStartCell = SelectCell("塗りつぶし開始セルを選択してください", ActiveCell)
     If objStartCell Is Nothing Then
         Exit Sub
     End If
@@ -873,22 +874,27 @@ On Error GoTo ErrHandle
         Call MsgBox("セルが、対象範囲の内側にありません")
         Exit Sub
     End If
+    SrcColor = CellToRGBQuad(objStartCell)
     
     Dim objColorCell As Range
-    Set objColorCell = SelectCell("塗潰し色のセルを選択してください", ActiveCell)
+    Dim DstColor As Long
+    Set objColorCell = SelectCell("塗りつぶし色のセルを選択してください", ActiveCell)
     If objColorCell Is Nothing Then
         Exit Sub
     End If
+    DstColor = CellToRGBQuad(objColorCell)
     
+    If SrcColor = DstColor Then Exit Sub
+
     Dim img As New CImage
     Call img.GetPixelsFromRange(objSelection)
     Call img.Fill(objStartCell.Column - objSelection.Column + 1, _
                   objStartCell.Row - objSelection.Row + 1, _
-                  objColorCell)
+                  DstColor)
     Application.ScreenUpdating = False
     Call SaveUndoInfo(objSelection)
     Call img.SetPixelsToRange(objSelection)
-    Call SetOnUndo("塗潰し")
+    Call SetOnUndo("塗りつぶし")
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -984,34 +990,67 @@ On Error GoTo ErrHandle
         lngUp = lngUp * 10
     End If
     
-    Dim H As Long
-    Dim S As Long
-    Dim L As Long
+    Dim objSelection As Range
+    '選択範囲の重複を排除
+    Set objSelection = ReSelectRange(Selection)
+    
     Dim strUndo As String
     Select Case lngType
     Case 1 '色相
-        H = lngUp
         strUndo = "色彩"
     Case 2 '彩度
-        S = lngUp
         strUndo = "彩度"
     Case 3 '明度
-        L = lngUp
         strUndo = "明度"
     End Select
     
-    '選択範囲の重複を排除
-    Dim objSelection As Range
-    Set objSelection = ReSelectRange(Selection)
+    '同一コマンドが連打されているか
+    Dim IsBeat As Boolean
+    If strUndo = GetUndoStr() Then
+        IsBeat = IsSameRange(objSelection.Address, FSelection)
+    End If
     
-    Dim objCell As Range
+    Static H As Long
+    Static S As Long
+    Static L As Long
+    
+    Dim objColorSheet As Worksheet
+    '同一コマンドが連打されているか
+    If IsBeat Then
+        Set objColorSheet = ThisWorkbook.Worksheets(UndoSheetName)
+        Select Case lngType
+        Case 1 '色相
+            H = H + lngUp
+        Case 2 '彩度
+            S = S + lngUp
+        Case 3 '明度
+            L = L + lngUp
+        End Select
+    Else
+        Set objColorSheet = objSelection.Worksheet
+        Select Case lngType
+        Case 1 '色相
+            H = lngUp
+        Case 2 '彩度
+            S = lngUp
+        Case 3 '明度
+            L = lngUp
+        End Select
+    End If
+    
     Dim RGBQuad As Long
     Application.ScreenUpdating = False
-    Call SaveUndoInfo(Selection, strUndo)
+    
+    If Not IsBeat Then
+        Call SaveUndoInfo(Selection, strUndo)
+    End If
+    
+    Dim objCell As Range
     For Each objCell In objSelection
-        RGBQuad = UpDownHSL(CellToRGBQuad(objCell), H, S, L)
+        RGBQuad = UpDownHSL(CellToRGBQuad(objColorSheet.Range(objCell.Address)), H, S, L)
         Call RGBQuadToCell(objCell, RGBQuad, True)
     Next
+    
     Call Selection.Select
     Call SetOnUndo(strUndo)
 Exit Sub
@@ -1320,4 +1359,7 @@ Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Sub
+
+
+
 

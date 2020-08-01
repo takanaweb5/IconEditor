@@ -198,14 +198,14 @@ Public Function UpDownHSL(ByVal SrcColor As Long, ByVal Hue As Long, ByVal Satur
     Dim B As Double
     Call HSLToRGB(H, S, L, R, G, B)
     UpDownHSL = RGBToRGBQuad(Round(R), Round(G), Round(B), RGBQuadToAlpha(SrcColor))
-    If SrcColor <> UpDownHSL Then Exit Function
-    
-    '変更前後で値が一致した場合は、不一致するまで再帰呼び出し
-    If LeVel = 3 Then
-        Exit Function
-    End If
-    LeVel = LeVel + 1
-    UpDownHSL = UpDownHSL(UpDownHSL, Hue * LeVel, Saturation * LeVel, Lightness * LeVel, LeVel)
+'    If SrcColor <> UpDownHSL Then Exit Function
+'
+'    '変更前後で値が一致した場合は、不一致するまで再帰呼び出し
+'    If LeVel = 3 Then
+'        Exit Function
+'    End If
+'    LeVel = LeVel + 1
+'    UpDownHSL = UpDownHSL(UpDownHSL, Hue * LeVel, Saturation * LeVel, Lightness * LeVel, LeVel)
 End Function
 
 '*****************************************************************************
@@ -213,7 +213,7 @@ End Function
 '[引数] SrcColor:変更前の色, 計算結果：H:0～360,S:0～255,L:0～255
 '[戻値] 変換後のHSL(ただし引数)
 '*****************************************************************************
-Private Sub RGBToHSL(ByVal SrcColor As Long, ByRef H As Double, ByRef S As Double, ByRef L As Double)
+Public Sub RGBToHSL(ByVal SrcColor As Long, ByRef H As Double, ByRef S As Double, ByRef L As Double)
     Dim R As Long '0～255
     Dim G As Long '0～255
     Dim B As Long '0～255
