@@ -2,9 +2,11 @@ Attribute VB_Name = "UndoInfo"
 Option Explicit
 Option Private Module
 
+Private Declare PtrSafe Function EmptyClipboard Lib "user32" () As Long
+
 Public Const UndoSheetName = "Undo"
 Private FRange     As Range   'Undoの対象領域
-Private FSelection As String  '選択領域のアドレス
+Public FSelection As String  '選択領域のアドレス
 
 '*****************************************************************************
 '[概要] Undo情報を保存する
@@ -15,7 +17,7 @@ Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As Stri
     If strCommand <> "" Then
         '色の調整コマンド等が連打されている時
         If strCommand = GetUndoStr() Then
-            If objSelection.Address(False, False) = FSelection Then
+            If IsSameRange(objSelection.Address, FSelection) Then
                 Exit Sub
             End If
         End If
@@ -69,10 +71,9 @@ Private Function GetCanvas(ByRef objSelection As Range) As Range
         End With
     Next
     
-    Dim objCell(1 To 2) As Range
-    Set objCell(1) = objSelection.Worksheet.Cells(lngRow(1), lngCol(1))
-    Set objCell(2) = objSelection.Worksheet.Cells(lngRow(2), lngCol(2))
-    Set GetCanvas = objSelection.Worksheet.Range(objCell(1), objCell(2))
+    With objSelection.Worksheet
+        Set GetCanvas = .Range(.Cells(lngRow(1), lngCol(1)), .Cells(lngRow(2), lngCol(2)))
+    End With
 End Function
 
 '*****************************************************************************
@@ -121,27 +122,9 @@ Public Sub ClearUndoSheet()
     For Each objShape In objSheet.Shapes
         Call objShape.Delete
     Next
-    
-    'これをするとExcel2013で実行が遅くなるのでやめる
-'    Call objSheet.Cells.Clear
+    Call objSheet.Cells.Clear
     
     '最後のセルを修正する
-'    Call objSheet.Cells.Parent.UsedRange
+    Call objSheet.Cells.Parent.UsedRange
 End Sub
-
-'*****************************************************************************
-'[概要] Undoボタンの情報を取得する
-'[引数] なし
-'[戻値] UndoボタンのTooltipText
-'*****************************************************************************
-Private Function GetUndoStr() As String
-    With CommandBars.FindControl(, 128) 'Undoボタン
-        If .Enabled Then
-            If .ListCount = 1 Then
-                'Undoが1種類の時のUndoコマンド
-                GetUndoStr = Trim(.List(1))
-            End If
-        End If
-    End With
-End Function
 

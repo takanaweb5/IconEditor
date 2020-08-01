@@ -10,30 +10,35 @@ Option Explicit
 Public Function Cell2RGBA(ByVal objCell As Range) As Variant
 Attribute Cell2RGBA.VB_ProcData.VB_Invoke_Func = " \n14"
 On Error GoTo ErrHandle
-    Dim Alpha As String
-    Dim vValue As Variant
     With objCell.Interior
         Select Case .ColorIndex
         Case xlNone, xlAutomatic
             '透明
             Cell2RGBA = 0
         Case Else
-            Alpha = "FF" '不透明
+            Dim Alpha As Byte
+            Alpha = &HFF '不透明
             '半透明かどうか
             If .Pattern = xlGray8 Then
+                Dim vValue As Variant
                 vValue = objCell.Value
                 If IsNumeric(vValue) Then
                     If 0 <= CLng(vValue) And CLng(vValue) <= 255 Then
                         'セルに入力された数値がアルファ値
-                        Alpha = WorksheetFunction.Dec2Hex(vValue, 2)
+                        Alpha = CByte(vValue)
                     End If
                 End If
             End If
-            Cell2RGBA = "${R}{G}{B}" & Alpha
-            With OleColorToARGB(.Color)
+            Cell2RGBA = "${R}{G}{B}{A}"
+            Dim Color As TLong
+            Color.Long = OleColorToRGBQuad(.Color, Alpha)
+            Dim RGBQuad As TRGBQuad
+            LSet RGBQuad = Color
+            With RGBQuad
                 Cell2RGBA = Replace(Cell2RGBA, "{R}", WorksheetFunction.Dec2Hex(.Red, 2))
                 Cell2RGBA = Replace(Cell2RGBA, "{G}", WorksheetFunction.Dec2Hex(.Green, 2))
                 Cell2RGBA = Replace(Cell2RGBA, "{B}", WorksheetFunction.Dec2Hex(.Blue, 2))
+                Cell2RGBA = Replace(Cell2RGBA, "{A}", WorksheetFunction.Dec2Hex(.Alpha, 2))
             End With
         End Select
     End With
@@ -63,7 +68,11 @@ On Error GoTo ErrHandle
             Cell2RGB = 0
         Case Else
             Cell2RGB = "${R}{G}{B}"
-            With OleColorToARGB(.Color)
+            Dim Color As TLong
+            Color.Long = OleColorToRGBQuad(.Color)
+            Dim RGBQuad As TRGBQuad
+            LSet RGBQuad = Color
+            With RGBQuad
                 Cell2RGB = Replace(Cell2RGB, "{R}", WorksheetFunction.Dec2Hex(.Red, 2))
                 Cell2RGB = Replace(Cell2RGB, "{G}", WorksheetFunction.Dec2Hex(.Green, 2))
                 Cell2RGB = Replace(Cell2RGB, "{B}", WorksheetFunction.Dec2Hex(.Blue, 2))
@@ -223,6 +232,4 @@ Public Function Cell2Blue(Optional objCell As Range = Nothing) As Long
         End Select
     End With
 End Function
-
-
 
