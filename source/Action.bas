@@ -941,31 +941,54 @@ On Error GoTo ErrHandle
         Up = Up * 10
     End If
     
-    '選択範囲の重複を排除
-    Dim objSelection As Range
-    Set objSelection = ReSelectRange(Selection)
+    '同一コマンドが連打されているか
+    Dim IsBeat As Boolean
+    If "色調整" = GetUndoStr() Then
+        IsBeat = IsSameRange(RangeToAddress(Selection), FSelection)
+    End If
     
     'RGBαの増減値
-    Dim UpDown(1 To 4) As Long
+    Static R As Long
+    Static G As Long
+    Static B As Long
+    Static A As Long
+    
+    Dim objColorSheet As Worksheet
+    '同一コマンドが連打されているか
+    If IsBeat Then
+        Set objColorSheet = ThisWorkbook.Worksheets(UndoSheetName)
+    Else
+        Set objColorSheet = Selection.Worksheet
+        R = 0
+        G = 0
+        B = 0
+        A = 0
+    End If
     If GetTmpControl("C4").State Then
-        UpDown(1) = Up
+        R = R + Up
     End If
     If GetTmpControl("C5").State Then
-        UpDown(2) = Up
+        G = G + Up
     End If
     If GetTmpControl("C6").State Then
-        UpDown(3) = Up
+        B = B + Up
     End If
     If GetTmpControl("C7").State Then
-        UpDown(4) = Up
+        A = A + Up
     End If
     
-    Dim objCell As Range
-    Dim RGBQuad As Long
+    Dim objSelection As Range
+    Set objSelection = Selection
+    
     Application.ScreenUpdating = False
-    Call SaveUndoInfo(Selection, "色調整")
-    For Each objCell In objSelection
-        RGBQuad = AdjustColor(CellToRGBQuad(objCell), UpDown(1), UpDown(2), UpDown(3), UpDown(4))
+    If Not IsBeat Then
+        Call SaveUndoInfo(Selection, "色調整")
+    End If
+    
+    Dim RGBQuad As Long
+    Dim objCell As Range
+    For Each objCell In ReSelectRange(objSelection)
+        RGBQuad = AdjustColor(CellToRGBQuad(objColorSheet.Range(objCell.Address)), R, G, B, A)
         Call RGBQuadToCell(objCell, RGBQuad, True)
     Next
     Call Selection.Select
@@ -994,10 +1017,6 @@ On Error GoTo ErrHandle
         Up = Up * 5
     End If
     
-    Dim objSelection As Range
-    '選択範囲の重複を排除
-    Set objSelection = ReSelectRange(Selection)
-    
     Dim strUndo As String
     Select Case lngType
     Case 1 '色相
@@ -1022,38 +1041,32 @@ On Error GoTo ErrHandle
     '同一コマンドが連打されているか
     If IsBeat Then
         Set objColorSheet = ThisWorkbook.Worksheets(UndoSheetName)
-        Select Case lngType
-        Case 1 '色相
-            H = H + Up
-        Case 2 '彩度
-            S = S + Up
-        Case 3 '明度
-            L = L + Up
-        End Select
     Else
+        Set objColorSheet = Selection.Worksheet
         H = 0
         S = 0
         L = 0
-        Set objColorSheet = objSelection.Worksheet
-        Select Case lngType
-        Case 1 '色相
-            H = Up
-        Case 2 '彩度
-            S = Up
-        Case 3 '明度
-            L = Up
-        End Select
     End If
+    Select Case lngType
+    Case 1 '色相
+        H = H + Up
+    Case 2 '彩度
+        S = S + Up
+    Case 3 '明度
+        L = L + Up
+    End Select
     
-    Dim RGBQuad As Long
+    Dim objSelection As Range
+    Set objSelection = Selection
+    
     Application.ScreenUpdating = False
-    
     If Not IsBeat Then
         Call SaveUndoInfo(Selection, strUndo)
     End If
     
+    Dim RGBQuad As Long
     Dim objCell As Range
-    For Each objCell In objSelection
+    For Each objCell In ReSelectRange(objSelection)
         RGBQuad = UpDownHSL(CellToRGBQuad(objColorSheet.Range(objCell.Address)), H, S, L)
         Call RGBQuadToCell(objCell, RGBQuad, True)
     Next

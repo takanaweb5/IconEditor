@@ -149,17 +149,24 @@ Public Function AdjustColor(ByVal SrcColor As Long, ByVal Red As Long, ByVal Gre
     Color.Long = SrcColor
     LSet RGBQuad = Color
     With RGBQuad
-        If Red + Green + Blue + Alpha > 0 Then
-            'ëùâ¡ÇÃéû
+        If Red > 0 Then
             .Red = WorksheetFunction.min(255, .Red + Red)
+        Else
+            .Red = WorksheetFunction.max(0, .Red + Red)
+        End If
+        If Green > 0 Then
             .Green = WorksheetFunction.min(255, .Green + Green)
+        Else
+            .Green = WorksheetFunction.max(0, .Green + Green)
+        End If
+        If Blue > 0 Then
             .Blue = WorksheetFunction.min(255, .Blue + Blue)
+        Else
+            .Blue = WorksheetFunction.max(0, .Blue + Blue)
+        End If
+        If Alpha > 0 Then
             .Alpha = WorksheetFunction.min(255, .Alpha + Alpha)
         Else
-            'å∏è≠ÇÃéû
-            .Red = WorksheetFunction.max(0, .Red + Red)
-            .Green = WorksheetFunction.max(0, .Green + Green)
-            .Blue = WorksheetFunction.max(0, .Blue + Blue)
             .Alpha = WorksheetFunction.max(0, .Alpha + Alpha)
         End If
     End With
