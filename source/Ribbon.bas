@@ -2,16 +2,15 @@ Attribute VB_Name = "Ribbon"
 Option Explicit
 Option Private Module
 
-Private Const PAGE_READONLY = 2&
-Private Const PAGE_READWRITE = 4&
-Private Const FILE_MAP_WRITE = 2&
-Private Const FILE_MAP_READ = 4&
-
-Private Declare PtrSafe Function CreateFileMapping Lib "kernel32" Alias "CreateFileMappingW" (ByVal hFile As LongPtr, lpFileMappingAttributes As Any, ByVal flProtect As Long, ByVal dwMaximumSizeHigh As Long, ByVal dwMaximumSizeLow As Long, ByVal lpName As String) As LongPtr
-Private Declare PtrSafe Function OpenFileMapping Lib "kernel32" Alias "OpenFileMappingW" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal ptrToNameString As String) As LongPtr
-Private Declare PtrSafe Function CloseHandle Lib "kernel32" (ByVal hObject As LongPtr) As Long
-Private Declare PtrSafe Function MapViewOfFile Lib "kernel32" (ByVal hFileMappingObject As LongPtr, ByVal dwDesiredAccess As Long, ByVal dwFileOffsetHigh As Long, ByVal dwFileOffsetLow As Long, ByVal dwNumberOfBytesToMap As Long) As LongPtr
-Private Declare PtrSafe Function UnmapViewOfFile Lib "kernel32" (ByVal lpBaseAddress As LongPtr) As Long
+'Private Const PAGE_READONLY = 2&
+'Private Const PAGE_READWRITE = 4&
+'Private Const FILE_MAP_WRITE = 2&
+'Private Const FILE_MAP_READ = 4&
+'Private Declare PtrSafe Function CreateFileMapping Lib "kernel32" Alias "CreateFileMappingW" (ByVal hFile As LongPtr, lpFileMappingAttributes As Any, ByVal flProtect As Long, ByVal dwMaximumSizeHigh As Long, ByVal dwMaximumSizeLow As Long, ByVal lpName As String) As LongPtr
+'Private Declare PtrSafe Function OpenFileMapping Lib "kernel32" Alias "OpenFileMappingW" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal ptrToNameString As String) As LongPtr
+'Private Declare PtrSafe Function CloseHandle Lib "kernel32" (ByVal hObject As LongPtr) As Long
+'Private Declare PtrSafe Function MapViewOfFile Lib "kernel32" (ByVal hFileMappingObject As LongPtr, ByVal dwDesiredAccess As Long, ByVal dwFileOffsetHigh As Long, ByVal dwFileOffsetLow As Long, ByVal dwNumberOfBytesToMap As Long) As LongPtr
+'Private Declare PtrSafe Function UnmapViewOfFile Lib "kernel32" (ByVal lpBaseAddress As LongPtr) As Long
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As LongPtr)
 
 'Private FRibbon As IRibbonUI '例外等が起きても値が損なわれないようにテンポラリのCommandBarに変更
@@ -301,23 +300,23 @@ Private Function GetTips(control As IRibbonControl, ByVal lngType As Long) As St
     Case 51, 52
         Result(1) = ""
         Result(2) = "明るさ"
-        Result(3) = "選択した範囲の色の明るさ(0～255)を1単位(Ctrlで10単位)で変更します" & vbCrLf & "増加:黒→原色→白" & vbCrLf & "減少:黒←原色←白"
+        Result(3) = "選択した範囲の色の明るさ(0～100)を5単位(Ctrlで1単位)で変更します" & vbCrLf & "増加:黒→原色→白" & vbCrLf & "減少:黒←原色←白"
     Case 53, 54
         Result(1) = ""
         Result(2) = "彩やかさ"
-        Result(3) = "選択した範囲の色の彩やかさ(0～255)を1単位(Ctrlで10単位)で変更します" & vbCrLf & "増加:灰色→純色" & vbCrLf & "減少:灰色←純色"
+        Result(3) = "選択した範囲の色の彩やかさ(0～100)を5単位(Ctrlで1単位)で変更します" & vbCrLf & "増加:灰色→純色" & vbCrLf & "減少:灰色←純色"
     Case 55, 56
         Result(1) = ""
         Result(2) = "色相"
-        Result(3) = "選択した範囲の色相(0～360°)を1°単位(Ctrlで5°単位)で変化させます" & vbCrLf & "増加:赤→黄→緑→青→紫→赤" & vbCrLf & "減少:赤←黄←緑←青←紫←赤"
+        Result(3) = "選択した範囲の色相(0～360°)を5°単位(Ctrlで1°単位)で変化させます" & vbCrLf & "増加:赤→黄→緑→青→紫→赤" & vbCrLf & "減少:赤←黄←緑←青←紫←赤"
     Case 57
         Result(1) = ""
         Result(2) = "RGB各色の数値(0～255)およびアルファ値を減少させます"
-        Result(3) = "選択した範囲のチェックしたRGB各色の数値(0～255)を1単位(Ctrlで10単位)で減少させます"
+        Result(3) = "選択した範囲のチェックしたRGB各色の数値(0～255)を10単位(Ctrlで1単位)で減少させます"
     Case 58
         Result(1) = ""
         Result(2) = "RGB各色の数値およびアルファ値を増加させます"
-        Result(3) = "選択した範囲のチェックしたRGB各色の数値(0～255)を1単位(Ctrlで10単位)で増加させます"
+        Result(3) = "選択した範囲のチェックしたRGB各色の数値(0～255)を10単位(Ctrlで1単位)で増加させます"
     
     Case 61 To 66
         Select Case Mid(control.ID, 2)

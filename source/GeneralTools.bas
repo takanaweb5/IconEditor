@@ -187,26 +187,6 @@ Public Function UnionRange(ByRef objRange1 As Range, ByRef objRange2 As Range) A
 End Function
 
 '*****************************************************************************
-'[概要] 領域が一致するか判定
-'[引数] 対象領域アドレス
-'[戻値] True:一致
-'*****************************************************************************
-Public Function IsSameRange(ByRef strRange1 As String, ByRef strRange2 As String) As Boolean
-    If strRange1 = "" Or strRange2 = "" Then
-        Exit Function
-    End If
-    
-    Dim objRange1 As Range
-    Dim objRange2 As Range
-    Set objRange1 = Range(strRange1)
-    Set objRange2 = Range(strRange2)
-    IsSameRange = MinusRange(objRange1, objRange2) Is Nothing
-    If IsSameRange Then
-        IsSameRange = MinusRange(objRange2, objRange1) Is Nothing
-    End If
-End Function
-
-'*****************************************************************************
 '[概要] 領域から領域を、除外する
 '       Ａ－Ｂ = Ａ∩!Ｂ
 '       !Ｂ = !(B1∪B2∪B3...∪Bn) = !B1∩!B2∩!B3...∩!Bn
@@ -271,23 +251,59 @@ End Function
 '[戻値] 領域の重複を省いた領域
 '*****************************************************************************
 Public Function ReSelectRange(ByRef objRange As Range) As Range
-    If objRange.Count = 1 Then
-        Set ReSelectRange = objRange
+    Set ReSelectRange = objRange.Areas(1)
+    
+    Dim i As Long
+    For i = 2 To objRange.Areas.Count
+        Set ReSelectRange = Union(ReSelectRange, ReSelectRange(MinusRange(objRange.Areas(i), ReSelectRange)))
+    Next
+End Function
+
+'*****************************************************************************
+'[概要] 領域が一致するか判定
+'[引数] 対象領域アドレス
+'[戻値] True:一致
+'*****************************************************************************
+Public Function IsSameRange(ByRef strRange1 As String, ByRef strRange2 As String) As Boolean
+    If strRange1 = "" Or strRange2 = "" Then
         Exit Function
     End If
     
-    Dim objArrange(1 To 3) As Range
-    With objRange
-        On Error Resume Next
-        Set objArrange(1) = .SpecialCells(xlCellTypeConstants)
-        Set objArrange(2) = .SpecialCells(xlCellTypeFormulas)
-        Set objArrange(3) = .SpecialCells(xlCellTypeBlanks)
-        On Error GoTo 0
-    End With
+    Dim objRange1 As Range
+    Dim objRange2 As Range
+    Set objRange1 = AddressToRange(strRange1)
+    Set objRange2 = AddressToRange(strRange2)
+    IsSameRange = MinusRange(objRange1, objRange2) Is Nothing
+    If IsSameRange Then
+        IsSameRange = MinusRange(objRange2, objRange1) Is Nothing
+    End If
+End Function
 
+'*****************************************************************************
+'[概要] Rangeのアドレスを取得する(255字以上に対応するため)
+'[引数] Range
+'[戻値] 例：A1:C3/E5/F1:G5
+'*****************************************************************************
+Public Function RangeToAddress(ByRef objRange As Range) As String
+    ReDim Address(1 To objRange.Areas.Count)
     Dim i As Long
-    For i = 1 To 3
-        Set ReSelectRange = UnionRange(ReSelectRange, objArrange(i))
+    For i = 1 To objRange.Areas.Count
+        Address(i) = objRange.Areas(i).Address(False, False)
+    Next
+    RangeToAddress = Join(Address, "/")
+End Function
+
+'*****************************************************************************
+'[概要] RangeToAddressの結果からRangeを取得する
+'[引数] 例：A1:C3/E5/F1:G5
+'[戻値] Range
+'*****************************************************************************
+Public Function AddressToRange(ByVal strAddress As String) As Range
+    Dim Address As Variant
+    Address = Split(strAddress, "/")
+    Dim i As Long
+    For i = LBound(Address) To UBound(Address)
+        Set AddressToRange = UnionRange(AddressToRange, Range(Address(i)))
     Next
 End Function
 
@@ -373,5 +389,4 @@ Public Function GetUndoStr() As String
         End If
     End With
 End Function
-
 

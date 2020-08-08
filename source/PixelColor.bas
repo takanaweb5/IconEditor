@@ -172,45 +172,37 @@ End Function
 '[引数] SrcColor:変更前の色、HSLのそれぞれの増減値
 '[戻値] 変更後の色
 '*****************************************************************************
-Public Function UpDownHSL(ByVal SrcColor As Long, ByVal Hue As Long, ByVal Saturation As Long, ByVal Lightness As Long, Optional LeVel As Long = 1) As Long
+Public Function UpDownHSL(ByVal SrcColor As Long, ByVal H_Up As Long, ByVal S_Up As Long, ByVal L_Up As Long) As Long
     Dim H As Double '0～360
-    Dim S As Double '0～255
-    Dim L As Double '0～255
+    Dim S As Double '0～100
+    Dim L As Double '0～100
         
     Call RGBToHSL(SrcColor, H, S, L)
     
 '    Debug.Print LeVel & "  " & "R:" & SrcColor.Red & " " & "G:" & SrcColor.Green & " " & "B:" & SrcColor.Blue, _
 '                "H:" & H & " " & "S:" & S & " " & "L:" & L
 
-    If Hue + Saturation + Lightness > 0 Then
+    If H_Up + S_Up + L_Up > 0 Then
         '増加の時
-        H = H + Hue
-        S = WorksheetFunction.min(255, S + Saturation)
-        L = WorksheetFunction.min(255, L + Lightness)
+        H = H + H_Up
+        S = WorksheetFunction.min(100, S + S_Up)
+        L = WorksheetFunction.min(100, L + L_Up)
     Else
         '減少の時
-        H = H + Hue
-        S = WorksheetFunction.max(0, S + Saturation)
-        L = WorksheetFunction.max(0, L + Lightness)
+        H = H + H_Up
+        S = WorksheetFunction.max(0, S + S_Up)
+        L = WorksheetFunction.max(0, L + L_Up)
     End If
     Dim R As Double
     Dim G As Double
     Dim B As Double
     Call HSLToRGB(H, S, L, R, G, B)
     UpDownHSL = RGBToRGBQuad(Round(R), Round(G), Round(B), RGBQuadToAlpha(SrcColor))
-'    If SrcColor <> UpDownHSL Then Exit Function
-'
-'    '変更前後で値が一致した場合は、不一致するまで再帰呼び出し
-'    If LeVel = 3 Then
-'        Exit Function
-'    End If
-'    LeVel = LeVel + 1
-'    UpDownHSL = UpDownHSL(UpDownHSL, Hue * LeVel, Saturation * LeVel, Lightness * LeVel, LeVel)
 End Function
 
 '*****************************************************************************
 '[概要] RGBをHSLに変換する
-'[引数] SrcColor:変更前の色, 計算結果：H:0～360,S:0～255,L:0～255
+'[引数] SrcColor:変更前の色, 計算結果：H:0～360,S:0～100,L:0～100
 '[戻値] 変換後のHSL(ただし引数)
 '*****************************************************************************
 Public Sub RGBToHSL(ByVal SrcColor As Long, ByRef H As Double, ByRef S As Double, ByRef L As Double)
@@ -233,9 +225,6 @@ Public Sub RGBToHSL(ByVal SrcColor As Long, ByRef H As Double, ByRef S As Double
     max = WorksheetFunction.max(R, G, B)
     min = WorksheetFunction.min(R, G, B)
     
-    'L(明度)
-    L = (max + min) / 2
-    
     'H(色相)
     If max <> min Then
         If max = R Then
@@ -252,6 +241,9 @@ Public Sub RGBToHSL(ByVal SrcColor As Long, ByRef H As Double, ByRef S As Double
         End If
     End If
      
+    'L(明度)
+    L = (max + min) / 2
+    
     'S(彩度)
     If max <> min Then
         If L <= 127 Then
@@ -259,24 +251,26 @@ Public Sub RGBToHSL(ByVal SrcColor As Long, ByRef H As Double, ByRef S As Double
         Else
           S = (max - min) / (510 - max - min)
         End If
-        S = S * 255
+        S = S * 100
     End If
+
+    L = L / 255 * 100
 End Sub
 
 '*****************************************************************************
 '[概要] HSLをRGBに変換する
-'[引数] H:0～360,S:0～255,L:0～255
+'[引数] H:0～360,S:0～100,L:0～100
 '[戻値] RGB(第4引数～第6引数)
 '*****************************************************************************
 Private Sub HSLToRGB(ByVal H As Double, ByVal S As Double, ByVal L As Double, ByRef R As Double, ByRef G As Double, ByRef B As Double)
     Dim max As Double
     Dim min As Double
-    If L <= 127 Then
-      max = L + L * (S / 255)
-      min = L - L * (S / 255)
+    If L < 50 Then
+      max = 2.55 * (L + L * (S / 100))
+      min = 2.55 * (L - L * (S / 100))
     Else
-      max = (L + (255 - L) * (S / 255))
-      min = (L - (255 - L) * (S / 255))
+      max = 2.55 * (L + (100 - L) * (S / 100))
+      min = 2.55 * (L - (100 - L) * (S / 100))
     End If
 
     If H < 0 Then

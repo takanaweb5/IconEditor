@@ -571,6 +571,7 @@ On Error GoTo ErrHandle
     Call SaveUndoInfo(Selection)
     Call RGBQuadToCell(objRange, DstColor, True)
     Call SetOnUndo("色の置換")
+    Call objSelection.Select
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
@@ -920,7 +921,7 @@ End Sub
 '[引数] 1:増加、-1:減少
 '[戻値] なし
 '*****************************************************************************
-Public Sub 色増減(ByVal lngUp As Long)
+Public Sub 色増減(ByVal Up As Long)
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
     If GetTmpControl("C4").State Or GetTmpControl("C5").State Or _
@@ -934,8 +935,10 @@ On Error GoTo ErrHandle
         Exit Sub
     End If
 
+    'Ctrl押下時
     If GetKeyState(vbKeyControl) < 0 Then
-        lngUp = lngUp * 10
+    Else
+        Up = Up * 10
     End If
     
     '選択範囲の重複を排除
@@ -945,16 +948,16 @@ On Error GoTo ErrHandle
     'RGBαの増減値
     Dim UpDown(1 To 4) As Long
     If GetTmpControl("C4").State Then
-        UpDown(1) = lngUp
+        UpDown(1) = Up
     End If
     If GetTmpControl("C5").State Then
-        UpDown(2) = lngUp
+        UpDown(2) = Up
     End If
     If GetTmpControl("C6").State Then
-        UpDown(3) = lngUp
+        UpDown(3) = Up
     End If
     If GetTmpControl("C7").State Then
-        UpDown(4) = lngUp
+        UpDown(4) = Up
     End If
     
     Dim objCell As Range
@@ -973,11 +976,11 @@ ErrHandle:
 End Sub
 
 '*****************************************************************************
-'[概要] 色のAHSLの値を増減させる
+'[概要] 色のHSLの値を増減させる
 '[引数] 1:増加、-1:減少
 '[戻値] なし
 '*****************************************************************************
-Public Sub HSL増減(ByVal lngUp As Long, ByVal lngType As Long)
+Public Sub HSL増減(ByVal Up As Long, ByVal lngType As Long)
 On Error GoTo ErrHandle
     If CheckSelection <> E_Range Then Exit Sub
     If Selection.Rows.Count = Rows.Count Or Selection.Columns.Count = Columns.Count Then
@@ -985,9 +988,10 @@ On Error GoTo ErrHandle
         Exit Sub
     End If
 
-    '増減値
+    'Ctrl押下時
     If GetKeyState(vbKeyControl) < 0 Then
-        lngUp = lngUp * 10
+    Else
+        Up = Up * 5
     End If
     
     Dim objSelection As Range
@@ -1007,7 +1011,7 @@ On Error GoTo ErrHandle
     '同一コマンドが連打されているか
     Dim IsBeat As Boolean
     If strUndo = GetUndoStr() Then
-        IsBeat = IsSameRange(objSelection.Address, FSelection)
+        IsBeat = IsSameRange(RangeToAddress(Selection), FSelection)
     End If
     
     Static H As Long
@@ -1020,21 +1024,24 @@ On Error GoTo ErrHandle
         Set objColorSheet = ThisWorkbook.Worksheets(UndoSheetName)
         Select Case lngType
         Case 1 '色相
-            H = H + lngUp
+            H = H + Up
         Case 2 '彩度
-            S = S + lngUp
+            S = S + Up
         Case 3 '明度
-            L = L + lngUp
+            L = L + Up
         End Select
     Else
+        H = 0
+        S = 0
+        L = 0
         Set objColorSheet = objSelection.Worksheet
         Select Case lngType
         Case 1 '色相
-            H = lngUp
+            H = Up
         Case 2 '彩度
-            S = lngUp
+            S = Up
         Case 3 '明度
-            L = lngUp
+            L = Up
         End Select
     End If
     
@@ -1359,7 +1366,4 @@ Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Sub
-
-
-
 

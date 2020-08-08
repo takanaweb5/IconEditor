@@ -2,8 +2,6 @@ Attribute VB_Name = "UndoInfo"
 Option Explicit
 Option Private Module
 
-Private Declare PtrSafe Function EmptyClipboard Lib "user32" () As Long
-
 Public Const UndoSheetName = "Undo"
 Private FRange     As Range   'Undoの対象領域
 Public FSelection As String  '選択領域のアドレス
@@ -17,7 +15,7 @@ Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As Stri
     If strCommand <> "" Then
         '色の調整コマンド等が連打されている時
         If strCommand = GetUndoStr() Then
-            If IsSameRange(objSelection.Address, FSelection) Then
+            If IsSameRange(RangeToAddress(objSelection), FSelection) Then
                 Exit Sub
             End If
         End If
@@ -27,7 +25,7 @@ Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As Stri
     Set objSheet = ThisWorkbook.Worksheets(UndoSheetName)
     
     Call ClearUndoSheet
-    FSelection = objSelection.Address(False, False)
+    FSelection = RangeToAddress(objSelection)
     Set FRange = GetCanvas(objSelection)
     '謎の例外を回避するためにUndoシート全般を使用済にしておく
     objSheet.Cells.Interior.ColorIndex = 0
@@ -100,7 +98,7 @@ On Error GoTo Finalization
     Call objSheet.Range(FRange.Address).Copy(FRange)
     FRange.Formula = FRange.Formula
     Call FRange.Worksheet.Activate
-    Call Range(FSelection).Select
+    Call AddressToRange(FSelection).Select
     Call ClearUndoSheet
     Call ThisWorkbook.Worksheets(UndoSheetName).Cells.Clear
 Finalization:
