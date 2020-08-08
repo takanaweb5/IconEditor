@@ -953,12 +953,8 @@ On Error GoTo ErrHandle
     Static B As Long
     Static A As Long
     
-    Dim objColorSheet As Worksheet
     '同一コマンドが連打されているか
-    If IsBeat Then
-        Set objColorSheet = ThisWorkbook.Worksheets(UndoSheetName)
-    Else
-        Set objColorSheet = Selection.Worksheet
+    If Not IsBeat Then
         R = 0
         G = 0
         B = 0
@@ -977,9 +973,6 @@ On Error GoTo ErrHandle
         A = A + Up
     End If
     
-    Dim objSelection As Range
-    Set objSelection = Selection
-    
     Application.ScreenUpdating = False
     If Not IsBeat Then
         Call SaveUndoInfo(Selection, "色調整")
@@ -987,8 +980,8 @@ On Error GoTo ErrHandle
     
     Dim RGBQuad As Long
     Dim objCell As Range
-    For Each objCell In ReSelectRange(objSelection)
-        RGBQuad = AdjustColor(CellToRGBQuad(objColorSheet.Range(objCell.Address)), R, G, B, A)
+    For Each objCell In ReSelectRange(Selection)
+        RGBQuad = AdjustColor(CellToRGBQuad(ThisWorkbook.Worksheets(UndoSheetName).Range(objCell.Address)), R, G, B, A)
         Call RGBQuadToCell(objCell, RGBQuad, True)
     Next
     Call Selection.Select
@@ -1037,12 +1030,8 @@ On Error GoTo ErrHandle
     Static S As Long
     Static L As Long
     
-    Dim objColorSheet As Worksheet
     '同一コマンドが連打されているか
-    If IsBeat Then
-        Set objColorSheet = ThisWorkbook.Worksheets(UndoSheetName)
-    Else
-        Set objColorSheet = Selection.Worksheet
+    If Not IsBeat Then
         H = 0
         S = 0
         L = 0
@@ -1056,9 +1045,6 @@ On Error GoTo ErrHandle
         L = L + Up
     End Select
     
-    Dim objSelection As Range
-    Set objSelection = Selection
-    
     Application.ScreenUpdating = False
     If Not IsBeat Then
         Call SaveUndoInfo(Selection, strUndo)
@@ -1066,8 +1052,8 @@ On Error GoTo ErrHandle
     
     Dim RGBQuad As Long
     Dim objCell As Range
-    For Each objCell In ReSelectRange(objSelection)
-        RGBQuad = UpDownHSL(CellToRGBQuad(objColorSheet.Range(objCell.Address)), H, S, L)
+    For Each objCell In ReSelectRange(Selection)
+        RGBQuad = UpDownHSL(CellToRGBQuad(ThisWorkbook.Worksheets(UndoSheetName).Range(objCell.Address)), H, S, L)
         Call RGBQuadToCell(objCell, RGBQuad, True)
     Next
     
