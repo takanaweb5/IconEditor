@@ -186,20 +186,22 @@ Public Function UpDownHSL(ByVal SrcColor As Long, ByVal H_Up As Long, ByVal S_Up
         
     Call RGBToHSL(SrcColor, H, S, L)
     
-'    Debug.Print LeVel & "  " & "R:" & SrcColor.Red & " " & "G:" & SrcColor.Green & " " & "B:" & SrcColor.Blue, _
-'                "H:" & H & " " & "S:" & S & " " & "L:" & L
-
-    If H_Up + S_Up + L_Up > 0 Then
-        'ëùâ¡ÇÃéû
-        H = H + H_Up
-        S = WorksheetFunction.min(100, S + S_Up)
-        L = WorksheetFunction.min(100, L + L_Up)
-    Else
-        'å∏è≠ÇÃéû
-        H = H + H_Up
-        S = WorksheetFunction.max(0, S + S_Up)
-        L = WorksheetFunction.max(0, L + L_Up)
+    H = H + H_Up
+    S = S + S_Up
+    L = L + L_Up
+    
+    If S < 0 Then
+        S = 0
+    ElseIf S > 100 Then
+        S = 100
     End If
+    
+    If L < 0 Then
+        L = 0
+    ElseIf L > 100 Then
+        L = 100
+    End If
+        
     Dim R As Double
     Dim G As Double
     Dim B As Double
