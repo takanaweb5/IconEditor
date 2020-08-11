@@ -15,7 +15,7 @@ Public Sub SaveUndoInfo(ByRef objSelection As Range, Optional strCommand As Stri
     If strCommand <> "" Then
         '色の調整コマンド等が連打されている時
         If strCommand = GetUndoStr() Then
-            If IsSameRange(RangeToAddress(objSelection), FSelection) Then
+            If RangeToAddress(objSelection) = FSelection Then
                 Exit Sub
             End If
         End If

@@ -29,7 +29,7 @@ On Error GoTo ErrHandle
                     End If
                 End If
             End If
-            Cell2RGBA = "${R}{G}{B}{A}"
+            Cell2RGBA = "#{R}{G}{B}{A}"
             Dim Color As TLong
             Color.Long = OleColorToRGBQuad(.Color, Alpha)
             Dim RGBQuad As TRGBQuad
@@ -67,7 +67,7 @@ On Error GoTo ErrHandle
             '透明
             Cell2RGB = 0
         Case Else
-            Cell2RGB = "${R}{G}{B}"
+            Cell2RGB = "#{R}{G}{B}"
             Dim Color As TLong
             Color.Long = OleColorToRGBQuad(.Color)
             Dim RGBQuad As TRGBQuad
@@ -90,7 +90,7 @@ End Function
 '[戻値] Redの値(0～255)
 '*****************************************************************************
 Public Function Hex2Red(ByVal strHex As String) As Byte
-    If Left(strHex, 1) = "$" Then
+    If Left(strHex, 1) = "#" Then
         If Len(strHex) = 7 Or Len(strHex) = 9 Then
             If IsNumeric("&H" & Mid(strHex, 2, 2)) Then
                 Hex2Red = "&H" & Mid(strHex, 2, 2)
@@ -108,7 +108,7 @@ End Function
 '[戻値] Greenの値(0～255)
 '*****************************************************************************
 Public Function Hex2Green(ByVal strHex As String) As Byte
-    If Left(strHex, 1) = "$" Then
+    If Left(strHex, 1) = "#" Then
         If Len(strHex) = 7 Or Len(strHex) = 9 Then
             If IsNumeric("&H" & Mid(strHex, 4, 2)) Then
                 Hex2Green = "&H" & Mid(strHex, 4, 2)
@@ -126,7 +126,7 @@ End Function
 '[戻値] Blueの値(0～255)
 '*****************************************************************************
 Public Function Hex2Blue(ByVal strHex As String) As Byte
-    If Left(strHex, 1) = "$" Then
+    If Left(strHex, 1) = "#" Then
         If Len(strHex) = 7 Or Len(strHex) = 9 Then
             If IsNumeric("&H" & Mid(strHex, 6, 2)) Then
                 Hex2Blue = "&H" & Mid(strHex, 6, 2)
@@ -141,10 +141,10 @@ End Function
 '*****************************************************************************
 '[概要] 16進数のRGBを設定
 '[引数] Red,Green,Blue
-'[戻値] RGB2Hex(255,128,0)→$FF8000
+'[戻値] RGB2Hex(255,128,0)→#FF8000
 '*****************************************************************************
 Public Function RGB2Hex(ByVal Red As Byte, ByVal Green As Byte, ByVal Blue As Byte) As String
-    RGB2Hex = "$" & WorksheetFunction.Dec2Hex(Red, 2) _
+    RGB2Hex = "#" & WorksheetFunction.Dec2Hex(Red, 2) _
                   & WorksheetFunction.Dec2Hex(Green, 2) _
                   & WorksheetFunction.Dec2Hex(Blue, 2)
 End Function

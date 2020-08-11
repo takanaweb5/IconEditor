@@ -264,20 +264,20 @@ End Function
 '[引数] 対象領域アドレス
 '[戻値] True:一致
 '*****************************************************************************
-Public Function IsSameRange(ByRef strRange1 As String, ByRef strRange2 As String) As Boolean
-    If strRange1 = "" Or strRange2 = "" Then
-        Exit Function
-    End If
-    
-    Dim objRange1 As Range
-    Dim objRange2 As Range
-    Set objRange1 = AddressToRange(strRange1)
-    Set objRange2 = AddressToRange(strRange2)
-    IsSameRange = MinusRange(objRange1, objRange2) Is Nothing
-    If IsSameRange Then
-        IsSameRange = MinusRange(objRange2, objRange1) Is Nothing
-    End If
-End Function
+'Public Function IsSameRange(ByRef strRange1 As String, ByRef strRange2 As String) As Boolean
+'    If strRange1 = "" Or strRange2 = "" Then
+'        Exit Function
+'    End If
+'
+'    Dim objRange1 As Range
+'    Dim objRange2 As Range
+'    Set objRange1 = AddressToRange(strRange1)
+'    Set objRange2 = AddressToRange(strRange2)
+'    IsSameRange = MinusRange(objRange1, objRange2) Is Nothing
+'    If IsSameRange Then
+'        IsSameRange = MinusRange(objRange2, objRange1) Is Nothing
+'    End If
+'End Function
 
 '*****************************************************************************
 '[概要] Rangeのアドレスを取得する(255字以上に対応するため)

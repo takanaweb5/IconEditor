@@ -944,7 +944,7 @@ On Error GoTo ErrHandle
     '同一コマンドが連打されているか
     Dim IsBeat As Boolean
     If "色調整" = GetUndoStr() Then
-        IsBeat = IsSameRange(RangeToAddress(Selection), FSelection)
+        IsBeat = (RangeToAddress(Selection) = FSelection)
     End If
     
     'RGBαの増減値
@@ -1023,7 +1023,7 @@ On Error GoTo ErrHandle
     '同一コマンドが連打されているか
     Dim IsBeat As Boolean
     If strUndo = GetUndoStr() Then
-        IsBeat = IsSameRange(RangeToAddress(Selection), FSelection)
+        IsBeat = (RangeToAddress(Selection) = FSelection)
     End If
     
     Static H As Long
@@ -1099,17 +1099,11 @@ On Error GoTo ErrHandle
     Application.ScreenUpdating = False
     Call SaveUndoInfo(Selection)
     Dim objCell As Range
-    Dim strValue As String
     For Each objCell In objSelection
         If blnAlpha Then
-            strValue = Cell2RGBA(objCell)
+            objCell.Value = Cell2RGBA(objCell)
         Else
-            strValue = Cell2RGB(objCell)
-        End If
-        If strValue = "0" Then
-            objCell.Value = 0
-        Else
-            objCell.Value = "'" & strValue
+            objCell.Value = Cell2RGB(objCell)
         End If
     Next
     
@@ -1166,7 +1160,7 @@ On Error GoTo ErrHandle
             If vValue = 0 Then
                 Set objZero = UnionRange(objZero, objCell)
             End If
-        ElseIf Left(vValue, 1) = "$" Then
+        ElseIf Left(vValue, 1) = "#" Then
             If Len(vValue) = 7 Or Len(vValue) = 9 Then
                 If IsNumeric("&H" & Mid(vValue, 2)) Then
                    Set objRange = UnionRange(objRange, objCell)
