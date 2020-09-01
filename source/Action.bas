@@ -941,6 +941,11 @@ On Error GoTo ErrHandle
         Up = Up * 10
     End If
     
+    'セルの選択状態を解除(図形選択の状態にする)
+    If Not CommandBars.GetPressedMso("ObjectsSelect") Then
+         Call ObjectsSelect
+    End If
+
     '同一コマンドが連打されているか
     Dim IsBeat As Boolean
     If "色調整" = GetUndoStr() Then
@@ -992,6 +997,36 @@ ErrHandle:
 End Sub
 
 '*****************************************************************************
+'[概要] 図形の選択モードにする
+'       ※エラーになることがあるためTrueになるまで繰返し実行する
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Private Sub ObjectsSelect()
+    If ObjectsSelectClick Then
+        Exit Sub
+    End If
+    ActiveWorkbook.DisplayDrawingObjects = xlAll
+    Dim objShape As Shape
+    Set objShape = ActiveSheet.Shapes.AddLine(0, 0, 0, 0)
+    Do While ObjectsSelectClick()
+        DoEvents
+    Loop
+    Call objShape.Delete
+End Sub
+
+'*****************************************************************************
+'[概要] 図形の選択モードにするコマンドを実行する
+'[引数] なし
+'[戻値] False:失敗
+'*****************************************************************************
+Private Function ObjectsSelectClick() As Boolean
+    On Error Resume Next
+    Call CommandBars.ExecuteMso("ObjectsSelect")
+    ObjectsSelectClick = (Err.Number = 0)
+End Function
+
+'*****************************************************************************
 '[概要] 色のHSLの値を増減させる
 '[引数] 1:増加、-1:減少
 '[戻値] なし
@@ -1008,6 +1043,11 @@ On Error GoTo ErrHandle
     If GetKeyState(vbKeyControl) < 0 Then
     Else
         Up = Up * 5
+    End If
+    
+    'セルの選択状態を解除(図形選択の状態にする)
+    If Not CommandBars.GetPressedMso("ObjectsSelect") Then
+         Call ObjectsSelect
     End If
     
     Dim strUndo As String
