@@ -197,12 +197,7 @@ Public Sub CreateFromFile(ByVal strFile As String, Optional lngWidth As Long = 0
         Call Err.Raise(513, "GdipLoadImageFromFileエラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
-    
-    If lngWidth <> 0 And lngHeight <> 0 Then
-        If lngWidth <> Me.Width And lngHeight <> Me.Height Then
-            Call Me.Resize(lngWidth, lngHeight)
-        End If
-    End If
+    Call Me.Resize(lngWidth, lngHeight)
 End Sub
 
 '*****************************************************************************
@@ -215,12 +210,7 @@ Public Sub CreateFromStream(ByVal Stream As IUnknown, Optional lngWidth As Long 
         Call Err.Raise(513, "GdipLoadImageFromStreamエラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
-    
-    If lngWidth <> 0 And lngHeight <> 0 Then
-        If lngWidth <> Me.Width And lngHeight <> Me.Height Then
-            Call Me.Resize(lngWidth, lngHeight)
-        End If
-    End If
+    Call Me.Resize(lngWidth, lngHeight)
 End Sub
 
 '*****************************************************************************
@@ -232,12 +222,7 @@ Public Sub CreateFromHBITMAP(ByVal hBitmap As LongPtr, Optional lngWidth As Long
     Dim Pixels() As Long
     Call GetPixelsFromHBITMAP(hBitmap, Pixels())
     Call CreateFromPixels(Pixels())
-    
-    If lngWidth <> 0 And lngHeight <> 0 Then
-        If lngWidth <> Me.Width And lngHeight <> Me.Height Then
-            Call Me.Resize(lngWidth, lngHeight)
-        End If
-    End If
+    Call Me.Resize(lngWidth, lngHeight)
 
 '    ※アルファチャネルが反映されないため却下
 '    If GdipCreateBitmapFromHBITMAP(hBitmap, 0&, FGdiImage) <> S_OK Then
@@ -284,34 +269,16 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Public Sub CreateFromPixels(ByRef Pixels() As Long)
-    Dim lngWidth  As Long
-    Dim lngHeight As Long
-    lngWidth = UBound(Pixels, 1)
-    lngHeight = UBound(Pixels, 2)
-    
-    'GdipDisposeImage(FGdiImage)するまでPixels()の領域を共有するため却下
-    '※CreateFromHBITMAPから実行される時は、GdipDisposeImageの前にPixels()が解放される
-'    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, lngWidth * 4, PixelFormat32bppARGB, Pixels(1, 1), FGdiImage) <> S_OK Then
-    
     'GdiImageオブジェクトを作成
-    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, 0, PixelFormat32bppARGB, ByVal 0, FGdiImage) <> S_OK Then
+    If GdipCreateBitmapFromScan0(UBound(Pixels, 1), UBound(Pixels, 2), 0, PixelFormat32bppARGB, ByVal 0, FGdiImage) <> S_OK Then
         Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
-    
-    Dim BmpData As BITMAPDATA
-    With BmpData
-        .Width = lngWidth
-        .Height = lngHeight
-        .PixelFormat = PixelFormat32bppARGB
-        .scan0 = VarPtr(Pixels(1, 1))
-        .stride = lngWidth * 4
-    End With
-    If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeWrite, PixelFormat32bppARGB, BmpData) <> S_OK Then
-        Call Err.Raise(513, "GdipBitmapLockBitsエラー")
-    End If
-    Call GdipBitmapUnlockBits(FGdiImage, BmpData)
+    Call BitmapLockBits(Pixels(), ImageLockModeWrite)
 
+'    'GdipDisposeImage(FGdiImage)するまでPixels()の領域を共有するため却下
+'    '※CreateFromHBITMAPから実行される時は、GdipDisposeImageの前にPixels()が解放される
+'    If GdipCreateBitmapFromScan0(lngWidth, lngHeight, lngWidth * 4, PixelFormat32bppARGB, Pixels(1, 1), FGdiImage) <> S_OK Then
 '    Dim x As Long, y As Long
 '    For x = 1 To lngWidth
 '        For y = 1 To lngHeight
@@ -326,11 +293,25 @@ End Sub
 '[戻値] なし
 '*****************************************************************************
 Public Sub ToPixels(ByRef Pixels() As Long)
+    ReDim Pixels(1 To Me.Width, 1 To Me.Height)
+    Call BitmapLockBits(Pixels(), ImageLockModeRead)
+End Sub
+
+'*****************************************************************************
+'[概要] GdipBitmapLockBitsを実行
+'[引数] Pixels(), ImageLockMode:読取り or 書込み
+'[戻値] なし
+'*****************************************************************************
+Private Sub BitmapLockBits(ByRef Pixels() As Long, ByVal lngImageLockMode As ImageLockMode)
     Dim lngWidth  As Long
     Dim lngHeight As Long
-    lngWidth = Me.Width
-    lngHeight = Me.Height
-    ReDim Pixels(1 To lngWidth, 1 To lngHeight)
+    If lngImageLockMode = ImageLockModeRead Then
+        lngWidth = Me.Width
+        lngHeight = Me.Height
+    Else
+        lngWidth = UBound(Pixels, 1)
+        lngHeight = UBound(Pixels, 2)
+    End If
     
     Dim BmpData As BITMAPDATA
     With BmpData
@@ -341,7 +322,7 @@ Public Sub ToPixels(ByRef Pixels() As Long)
         .stride = lngWidth * 4
     End With
     
-    If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or ImageLockModeRead, PixelFormat32bppARGB, BmpData) <> S_OK Then
+    If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or lngImageLockMode, PixelFormat32bppARGB, BmpData) <> S_OK Then
         Call Err.Raise(513, "GdipBitmapLockBitsエラー")
     End If
     Call GdipBitmapUnlockBits(FGdiImage, BmpData)
@@ -393,6 +374,13 @@ End Sub
 '*****************************************************************************
 Public Sub Resize(ByVal lngWidth As Long, ByVal lngHeight As Long)
 On Error GoTo Finalization
+    If lngWidth = 0 Or lngHeight = 0 Then
+        Exit Sub
+    End If
+    If lngWidth = Me.Width And lngHeight = Me.Height Then
+        Exit Sub
+    End If
+    
     '新しいサイズのBitmapオブジェクトを作成
     Dim hNewBmp  As LongPtr
     If GdipCreateBitmapFromScan0(lngWidth, lngHeight, 0, PixelFormat32bppARGB, ByVal 0&, hNewBmp) <> S_OK Then
