@@ -333,6 +333,15 @@ On Error GoTo ErrHandle
         Set DestRange = ActiveCell.Resize(img.Height, img.Width)
     End If
     
+    If GetKeyState(vbKeyControl) < 0 And GetKeyState(vbKeyShift) < 0 Then
+        If img.Width > 64 Then
+            DestRange.Offset(, 20).Resize(, img.Width - 40).EntireColumn.Hidden = True
+        End If
+        If img.Height > 64 Then
+            DestRange.Offset(20).Resize(img.Height - 40).EntireRow.Hidden = True
+        End If
+    End If
+    
     Application.ScreenUpdating = False
     Call SaveUndoInfo(DestRange)
     Call img.SetPixelsToRange(DestRange)
@@ -1090,7 +1099,14 @@ End Sub
 Public Function Getサンプル画像() As IPicture
 On Error GoTo ErrHandle
     Dim img As New CImage
-    Call img.GetPixelsFromRange(Selection)
+    Select Case CheckSelection
+    Case E_Range
+        Call img.GetPixelsFromRange(Selection)
+        Set Getサンプル画像 = img.SetToIPicture
+    Case E_Shape
+        Call Selection.Copy
+        Call img.LoadBMPFromClipbord
+    End Select
     Set Getサンプル画像 = img.SetToIPicture
 Exit Function
 ErrHandle:

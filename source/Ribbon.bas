@@ -461,7 +461,6 @@ Private Sub GetImages(control As IRibbonControl, ByRef Result)
             strImage = "TentativeAcceptInvitation"
         End If
     
-    
     Case 74
         strImage = "EditFormula"
     Case 71, 72, 75
@@ -556,11 +555,15 @@ Sub onAction(control As IRibbonControl)
         Call F‘Œ¸(1)
     
     Case 61 To 66
-        If CheckSelection <> E_Range Then Exit Sub
-        Call Clipbord‰æ‘œİ’è
-        FSampleClick = True
-        Call GetRibbonUI.InvalidateControl(control.ID)
-
+        Select Case CheckSelection
+        Case E_Range
+            Call Clipbord‰æ‘œİ’è
+            FSampleClick = True
+            Call GetRibbonUI.InvalidateControl(control.ID)
+        Case E_Shape
+            FSampleClick = True
+            Call GetRibbonUI.InvalidateControl(control.ID)
+        End Select
     Case 71
         Call F‚ğ”’l‰»(False)
     Case 72
