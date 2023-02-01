@@ -424,8 +424,8 @@ On Error GoTo ErrHandle
     Set objWkShape = GroupShape(objSelection.ShapeRange(1))
     
     '72(ExcelのデフォルトのDPI),96(Windows画像のデフォルトのDPI)
-    objWkShape.Width = (lngWidth - 1) * 72 / 96
-    objWkShape.Height = (lngHeight - 1) * 72 / 96
+    objWkShape.Width = lngWidth * 72 / 96
+    objWkShape.Height = lngHeight * 72 / 96
     Call objWkShape.Copy
     
     Dim img As New CImage
@@ -1392,5 +1392,41 @@ On Error Resume Next
 Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] 選択された図形のサイズを変更する
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 図形サイズ変更()
+    If CheckSelection <> E_Shape Then Exit Sub
+    
+    Dim lngWidth As Long
+    Dim lngHeight As Long
+    Dim WidthAndHeight As Variant
+    
+    Dim strInput As String
+    Do While True
+        strInput = InputBox("幅,高さを入力してください" & vbCrLf & vbCrLf & "例 256,128", , "256,128")
+        If strInput = "" Then
+            Exit Sub
+        End If
+        WidthAndHeight = Split(strInput, ",")
+        If UBound(WidthAndHeight) = 1 Then
+            If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
+                lngWidth = WidthAndHeight(0)
+                lngHeight = WidthAndHeight(1)
+                Exit Do
+            End If
+        End If
+    Loop
+    
+    '72(ExcelのデフォルトのDPI),96(Windows画像のデフォルトのDPI)
+    Dim objWkShape As Shape
+    Set objWkShape = Selection.ShapeRange(1)
+    objWkShape.LockAspectRatio = msoFalse
+    objWkShape.Width = lngWidth * 72 / 96
+    objWkShape.Height = lngHeight * 72 / 96
 End Sub
 
