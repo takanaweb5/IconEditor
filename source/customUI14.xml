@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <customUI onLoad="onLoad" xmlns="http://schemas.microsoft.com/office/2009/07/customui">
 <ribbon>
 <tabs>
@@ -308,6 +308,98 @@
    getScreentip="getScreentip" getSupertip="getSupertip"
    getShowImage="getShowImage" getSize="getSize" getImage="getImage"
    onAction="onAction"/>
+</group>
+
+<group id="grp8" label="図形" imageMso="GroupShapes">
+  <button id="B81"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
+   onAction="onAction"/>
+  <button id="B82"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
+   onAction="onAction"/>
+  <button id="B83"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
+   onAction="onAction"/>
+
+ <menu id="M81" label="配置/整列" imageMso="ObjectAlignMenu" showImage="true">
+  <control idMso="ObjectsAlignLeft"/>
+  <control idMso="ObjectsAlignCenterHorizontal"/>
+  <control idMso="ObjectsAlignRight"/>
+  <menuSeparator id="MS811" />
+  <control idMso="ObjectsAlignTop"/>
+  <control idMso="ObjectsAlignMiddleVertical"/>
+  <control idMso="ObjectsAlignBottom"/>
+  <menuSeparator id="MS812" />
+  <control idMso="AlignDistributeHorizontallyClassic" label="左右に等間隔で整列"/>
+  <control idMso="AlignDistributeVerticallyClassic"   label="上下に等間隔で整列"/>
+  <menuSeparator id="MS813" />
+  <button id="B811"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage"
+   onAction="onAction"/>
+  <button id="B812"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage"
+   onAction="onAction"/>
+  <menuSeparator id="MS814" />
+  <button id="B813"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage"
+   onAction="onAction"/>
+  <button id="B814"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage"
+   onAction="onAction"/>
+  <menuSeparator id="MS815" />
+  <button id="B815"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage"
+   onAction="onAction"/>
+  <button id="B816"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getImage="getImage"
+   onAction="onAction"/>
+ </menu>
+ 
+  <button id="B85"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
+   onAction="onAction"/>
+
+ <box id="box81" boxStyle="horizontal">
+  <toggleButton idMso="SnapToGrid"   showLabel="false" label="枠線に合わせる" screentip="枠線に合わせる" supertip="図形移動時に図形の位置を枠線に合わせます" size="normal"/>
+  <toggleButton idMso="SnapToShapes" showLabel="false" label="図形に合わせる" screentip="図形に合わせる" supertip="図形移動時に図形の位置を図形に合わせます&#13;※マウス操作時のみ有効です" size="normal"/>
+  <button id="B84"
+   getVisible="getVisible" getEnabled="getEnabled"
+   getShowLabel="getShowLabel" getLabel="getLabel"
+   getScreentip="getScreentip" getSupertip="getSupertip"
+   getShowImage="getShowImage" getSize="getSize" getImage="getImage"
+   onAction="onAction"/>
+ </box>
+ 
 </group>
 
 </tab>

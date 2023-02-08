@@ -2,9 +2,10 @@ Attribute VB_Name = "Action"
 Option Explicit
 Option Private Module
 
-Public Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
-Private Declare PtrSafe Function GetKeyState Lib "user32" (ByVal lngVirtKey As Long) As Integer
 Public FFormLoad As Boolean
+
+'呼び出し先のフォームがロードされているかどうか
+Public blnFormLoad As Boolean
 
 '*****************************************************************************
 '[概要] クリア
@@ -424,8 +425,8 @@ On Error GoTo ErrHandle
     Set objWkShape = GroupShape(objSelection.ShapeRange(1))
     
     '72(ExcelのデフォルトのDPI),96(Windows画像のデフォルトのDPI)
-    objWkShape.Width = (lngWidth - 1) * 72 / 96
-    objWkShape.Height = (lngHeight - 1) * 72 / 96
+    objWkShape.Width = lngWidth * 72 / 96
+    objWkShape.Height = lngHeight * 72 / 96
     Call objWkShape.Copy
     
     Dim img As New CImage
@@ -1393,4 +1394,327 @@ Exit Sub
 ErrHandle:
     Call MsgBox(Err.Description, vbExclamation)
 End Sub
+
+'*****************************************************************************
+'[概要] 選択された図形のサイズを変更する
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 図形サイズ変更()
+    If CheckSelection <> E_Shape Then
+        Call MsgBox("図形が選択されていません")
+        Exit Sub
+    End If
+    
+    Dim lngWidth As Long
+    Dim lngHeight As Long
+    Dim WidthAndHeight As Variant
+    
+    Dim strInput As String
+    Do While True
+        strInput = InputBox("幅,高さを入力してください" & vbCrLf & vbCrLf & "例 256,128", , "256,128")
+        If strInput = "" Then
+            Exit Sub
+        End If
+        WidthAndHeight = Split(strInput, ",")
+        If UBound(WidthAndHeight) = 1 Then
+            If IsNumeric(WidthAndHeight(0)) And IsNumeric(WidthAndHeight(1)) Then
+                lngWidth = WidthAndHeight(0)
+                lngHeight = WidthAndHeight(1)
+                Exit Do
+            End If
+        End If
+    Loop
+    
+    Call Selection.Copy
+    Call ActiveSheet.PasteSpecial("図 (拡張メタファイル)")
+        
+    '72(ExcelのデフォルトのDPI),96(Windows画像のデフォルトのDPI)
+    Dim objWkShape As Shape
+    Set objWkShape = Selection.ShapeRange(1)
+    objWkShape.LockAspectRatio = msoFalse
+    objWkShape.Width = lngWidth * 72 / 96
+    objWkShape.Height = lngHeight * 72 / 96
+End Sub
+
+'*****************************************************************************
+'[概要] クリップボードのEMFデータをファイルに保存する
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 図形保存()
+    If CheckSelection <> E_Shape Then
+        Call MsgBox("図形が選択されていません")
+        Exit Sub
+    End If
+    
+    Dim vDBName As Variant
+    vDBName = Application.GetSaveAsFilename("", "メタフィル,*.emf")
+    If vDBName = False Then Exit Sub
+    
+    Selection.Copy
+    If OpenClipboard(0) = 0 Then Exit Sub
+On Error GoTo Finalization
+    Dim hMem As LongPtr
+    hMem = GetClipboardData(CF_ENHMETAFILE)
+    If hMem = 0 Then GoTo Finalization
+    
+    Dim hMeta As LongPtr
+    hMeta = CopyEnhMetaFile(hMem, vDBName)
+    If hMeta <> 0 Then
+        Call DeleteEnhMetaFile(hMeta)
+    Else
+        Call Err.Raise(513, , "ファイルの保存に失敗しました")
+    End If
+Finalization:
+    Call CloseClipboard
+    If Err.Number <> 0 Then Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] 図形を移動またはサイズ変更する
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 図形微調整()
+    '選択されているオブジェクトを判定
+    If CheckSelection() <> E_Shape Then
+        Call MsgBox("図形が選択されていません")
+        Exit Sub
+    End If
+
+    'IMEをオフにする
+    Call SetIMEOff
+
+On Error GoTo ErrHandle
+    'フォームを表示
+    Call frmMoveShape.Show
+Exit Sub
+ErrHandle:
+    If blnFormLoad = True Then
+        Call Unload(frmMoveShape)
+    End If
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] IMEをオフにする
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Private Sub SetIMEOff()
+On Error GoTo ErrHandle
+    Dim hIME As LongPtr
+    hIME = ImmGetContext(Application.hwnd)
+    Call ImmSetOpenStatus(hIME, 0)
+ErrHandle:
+    If hIME <> 0 Then
+        Call ImmReleaseContext(Application.hwnd, hIME)
+    End If
+End Sub
+
+'*****************************************************************************
+'[概要] 図形を左右に連結する
+'[引数] objShapes:図形
+'[戻値] なし
+'*****************************************************************************
+Public Sub ConnectShapesH(ByRef objShapes As ShapeRange)
+    Dim i     As Long
+    
+    ReDim udtSortArray(1 To objShapes.Count) As TSortArray
+    For i = 1 To objShapes.Count
+        With udtSortArray(i)
+            .Key1 = objShapes(i).Left / DPIRatio
+            .Key2 = objShapes(i).Width / DPIRatio
+            .Key3 = i
+        End With
+    Next
+
+    'Let,Widthの順でソートする
+    Call SortArray(udtSortArray())
+
+    Dim lngTopLeft    As Long
+    lngTopLeft = udtSortArray(1).Key1
+    
+    For i = 2 To objShapes.Count
+        If udtSortArray(i).Key1 > udtSortArray(i - 1).Key1 Then
+            lngTopLeft = lngTopLeft + udtSortArray(i - 1).Key2
+        End If
+        
+        objShapes(udtSortArray(i).Key3).Left = lngTopLeft * DPIRatio
+    Next
+End Sub
+
+'*****************************************************************************
+'[概要] 図形を上下に連結する
+'[引数] objShapes:図形
+'[戻値] なし
+'*****************************************************************************
+Public Sub ConnectShapesV(ByRef objShapes As ShapeRange)
+    Dim i     As Long
+    
+    ReDim udtSortArray(1 To objShapes.Count) As TSortArray
+    For i = 1 To objShapes.Count
+        With udtSortArray(i)
+            .Key1 = objShapes(i).Top / DPIRatio
+            .Key2 = objShapes(i).Height / DPIRatio
+            .Key3 = i
+        End With
+    Next
+
+    'Top,Heightの順でソートする
+    Call SortArray(udtSortArray())
+
+    Dim lngTopLeft    As Long
+    lngTopLeft = udtSortArray(1).Key1
+    
+    For i = 2 To objShapes.Count
+        If udtSortArray(i).Key1 > udtSortArray(i - 1).Key1 Then
+            lngTopLeft = lngTopLeft + udtSortArray(i - 1).Key2
+        End If
+        
+        objShapes(udtSortArray(i).Key3).Top = lngTopLeft * DPIRatio
+    Next
+End Sub
+
+'*****************************************************************************
+'[概要] 選択されたセル上の図形を選択する
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub 図形選択()
+On Error GoTo ErrHandle
+    If ActiveWorkbook.DisplayDrawingObjects = xlHide Then
+        Exit Sub
+    End If
+    
+    Call ShowSelectionPane
+    
+    If CheckSelection() <> E_Range Then
+        Exit Sub
+    End If
+    
+    If ActiveSheet.Shapes.Count = 0 Then
+        Exit Sub
+    End If
+    
+    ReDim lngArray(1 To ActiveSheet.Shapes.Count)
+    Dim i As Long
+    Dim j As Long
+    For i = 1 To ActiveSheet.Shapes.Count
+        'コメントの図形は対象外とする
+        If ActiveSheet.Shapes(i).Type <> msoComment Then
+            If IsInclude(Selection, ActiveSheet.Shapes(i)) Then
+                j = j + 1
+                lngArray(j) = i
+            End If
+        End If
+    Next
+    
+    '対象の図形がない時は、図形選択モードにする
+    If j = 0 Then
+        On Error Resume Next
+        Call CommandBars.ExecuteMso("ObjectsSelect")
+        Exit Sub
+    End If
+    
+    ReDim Preserve lngArray(1 To j)
+    Call ActiveSheet.Shapes.Range(lngArray).Select
+Exit Sub
+ErrHandle:
+    Call MsgBox(Err.Description, vbExclamation)
+End Sub
+
+'*****************************************************************************
+'[概要] 図形がRangeエリアに含まれるかどうか判定
+'[引数] Rangeエリア、判定する図形
+'[戻値] なし
+'*****************************************************************************
+Private Function IsInclude(ByRef objRange As Range, ByRef objShape As Shape) As Boolean
+    On Error Resume Next
+    With objShape
+        IsInclude = (MinusRange(Range(.TopLeftCell, .BottomRightCell), objRange) Is Nothing)
+    End With
+End Function
+
+'*****************************************************************************
+'[概要] オブジェクトの選択を表示画面を表示する
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Private Sub ShowSelectionPane()
+    On Error Resume Next
+    If Not CommandBars.GetPressedMso("SelectionPane") Then
+        Call CommandBars.ExecuteMso("SelectionPane")
+    End If
+End Sub
+
+'*****************************************************************************
+'[概要] 図形の幅を揃える
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub DistributeShapesWidth(ByRef objShapeRange As ShapeRange)
+    Dim objShape   As Shape
+    Dim dblWidth   As Double
+    
+    '図形の数だけループ
+    For Each objShape In objShapeRange
+        dblWidth = dblWidth + objShape.Width
+    Next objShape
+    With objShapeRange
+        .Width = Round(dblWidth / .Count / DPIRatio) * DPIRatio
+    End With
+End Sub
+
+'*****************************************************************************
+'[概要] 図形の高さを揃える
+'[引数] なし
+'[戻値] なし
+'*****************************************************************************
+Public Sub DistributeShapesHeight(ByRef objShapeRange As ShapeRange)
+    Dim objShape   As Shape
+    Dim dblHeight  As Double
+    
+    '図形の数だけループ
+    For Each objShape In objShapeRange
+        dblHeight = dblHeight + objShape.Height
+    Next objShape
+    With objShapeRange
+        .Height = Round(dblHeight / .Count / DPIRatio) * DPIRatio
+    End With
+End Sub
+
+'*****************************************************************************
+'[概要] 選択された図形を枠線にあわせる
+'[引数] objShapeRange：対象図形、blnSizeChg：サイズを変更するかどうか
+'[戻値] なし
+'*****************************************************************************
+Public Sub FitShapesGrid(ByRef objShapeRange As ShapeRange, Optional blnSizeChg As Boolean = True)
+    Dim objShape   As Shape     '図形
+    Dim objRange   As Range
+
+    '図形の数だけループ
+    For Each objShape In objShapeRange
+        Set objRange = GetNearlyRange(objShape)
+        With objShape
+            .Top = objRange.Top
+            .Left = objRange.Left
+            If blnSizeChg = True Then
+                If .Height > 0.5 Then
+                    .Height = objRange.Height
+                Else
+                    .Height = 0
+                End If
+                If .Width > 0.5 Then
+                    .Width = objRange.Width
+                Else
+                    .Width = 0
+                End If
+            End If
+        End With
+    Next objShape
+End Sub
+
+
 

@@ -2,17 +2,6 @@ Attribute VB_Name = "Ribbon"
 Option Explicit
 Option Private Module
 
-'Private Const PAGE_READONLY = 2&
-'Private Const PAGE_READWRITE = 4&
-'Private Const FILE_MAP_WRITE = 2&
-'Private Const FILE_MAP_READ = 4&
-'Private Declare PtrSafe Function CreateFileMapping Lib "kernel32" Alias "CreateFileMappingW" (ByVal hFile As LongPtr, lpFileMappingAttributes As Any, ByVal flProtect As Long, ByVal dwMaximumSizeHigh As Long, ByVal dwMaximumSizeLow As Long, ByVal lpName As String) As LongPtr
-'Private Declare PtrSafe Function OpenFileMapping Lib "kernel32" Alias "OpenFileMappingW" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal ptrToNameString As String) As LongPtr
-'Private Declare PtrSafe Function CloseHandle Lib "kernel32" (ByVal hObject As LongPtr) As Long
-'Private Declare PtrSafe Function MapViewOfFile Lib "kernel32" (ByVal hFileMappingObject As LongPtr, ByVal dwDesiredAccess As Long, ByVal dwFileOffsetHigh As Long, ByVal dwFileOffsetLow As Long, ByVal dwNumberOfBytesToMap As Long) As LongPtr
-'Private Declare PtrSafe Function UnmapViewOfFile Lib "kernel32" (ByVal lpBaseAddress As LongPtr) As Long
-Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As LongPtr)
-
 'Private FRibbon As IRibbonUI '例外等が起きても値が損なわれないようにテンポラリのCommandBarに変更
 'Public FChecked(1 To 7) As Boolean
 Private FSampleClick As Boolean
@@ -368,6 +357,38 @@ Private Function GetTips(control As IRibbonControl, ByVal lngType As Long) As St
                     "1～254のセルはアルファ値を設定します" & vbLf & _
                     "以外(255や空白)のセルは、不透明にします" & vbLf & _
                     "実行後はセルの値をクリアします"
+    Case 81
+        Result(1) = "微調整"
+        Result(2) = "微調整"
+        Result(3) = "図形の位置やサイズを微調整できます"
+    Case 82
+        Result(1) = "サイズ"
+        Result(2) = "サイズ"
+        Result(3) = "図形のサイズをピクセル単位で指定できます"
+    Case 83
+        Result(1) = "保存"
+        Result(2) = "ファイル保存"
+        Result(3) = "図形をPNGまたはEMFファイルとして保存します"
+    Case 84
+        Result(1) = ""
+        Result(2) = "図形選択"
+        Result(3) = "選択されたセル上の図形を選択します"
+    Case 85
+        Result(1) = "枠線間隔"
+        Result(2) = "枠線間隔"
+        Result(3) = "枠線の間隔をピクセル単位で指定できます"
+    Case 811
+        Result(1) = "横方向に連結"
+    Case 812
+        Result(1) = "縦方向に連結"
+    Case 813
+        Result(1) = "幅を揃える"
+    Case 814
+        Result(1) = "高さを揃える"
+    Case 815
+        Result(1) = "図形の四方を枠線に合わせる"
+    Case 816
+        Result(1) = "左上の位置を枠線に移動する"
     Case Else
         Result(1) = ""
     End Select
@@ -471,6 +492,31 @@ Private Sub GetImages(control As IRibbonControl, ByRef Result)
         Set objImage = Getイメージ(Range("Resource!6:6"))
 '    Case 77, 78
 '        strImage = "DataTypeCalculatedColumn"
+    
+    Case 81
+        strImage = "DrawingCanvasExpand"
+    Case 82
+        strImage = "ObjectSizeAndPositionDialog"
+    Case 83
+        strImage = "FileSave"
+    Case 84
+        strImage = "ObjectsSelect"
+    Case 85
+        strImage = "ViewGridlines"
+    
+    Case 811
+        strImage = "AlignDistributeHorizontallyClassic"
+    Case 812
+        strImage = "AlignDistributeVerticallyClassic"
+    Case 813
+        strImage = "TableColumnsDistribute"
+    Case 814
+        strImage = "TableRowsDistribute"
+    Case 815
+        strImage = "SizeToGridAccess"
+    Case 816
+        strImage = "ControlAlignToGrid"
+    
     Case Else
 '        strimage = "BlackAndWhiteWhite"
     End Select
@@ -581,9 +627,45 @@ Sub onAction(control As IRibbonControl)
         Call 数値から色を設定
     Case 76
         Call 数値からアルファ値を設定
+    Case 81
+        Call 図形微調整
+    Case 82
+        Call 図形サイズ変更
+    Case 83
+        Call 図形保存
+    Case 84
+        Call 図形選択
+    
+    Case 811 To 816
+        Call onActionSub(control)
     End Select
 End Sub
 
+Sub onActionSub(control As IRibbonControl)
+    '選択されているオブジェクトを判定
+    If CheckSelection() <> E_Shape Then
+        Call MsgBox("図形が選択されていません")
+        Exit Sub
+    End If
+    
+    Dim objShapeRange As ShapeRange
+    Set objShapeRange = Selection.ShapeRange
+    
+    Select Case Mid(control.ID, 2)
+    Case 811
+        Call ConnectShapesH(objShapeRange)
+    Case 812
+        Call ConnectShapesV(objShapeRange)
+    Case 813
+        Call DistributeShapesWidth(objShapeRange)
+    Case 814
+        Call DistributeShapesHeight(objShapeRange)
+    Case 815
+        Call FitShapesGrid(objShapeRange, True)
+    Case 816
+        Call FitShapesGrid(objShapeRange, False)
+    End Select
+End Sub
 
 '*****************************************************************************
 '[概要] セルのデータからアイコンファイルを読込む
