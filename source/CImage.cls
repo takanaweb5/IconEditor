@@ -302,7 +302,7 @@ Public Sub LoadImageFromResource(ByRef objRow As Range)
     
     Dim Stream As IUnknown
     If CreateStreamOnHGlobal(VarPtr(Data(1)), 0, Stream) <> S_OK Then
-        Call Err.Raise(513, "CreateStreamOnHGlobalエラー")
+        Call Err.Raise(513, , "CreateStreamOnHGlobalエラー")
     End If
 
     Dim Gdip As New CGdiplus
@@ -328,7 +328,7 @@ Public Sub SaveImageToFile(ByVal strFile As String)
         Call Gdip.CreateFromPixels(FPixels())
         Call Gdip.SaveToPNGFile(strFile)
     Case Else
-        Call Err.Raise(513, "ファイル形式エラー")
+        Call Err.Raise(513, , "ファイル形式エラー")
     End Select
 End Sub
 
@@ -370,7 +370,7 @@ On Error GoTo Finalization
 
     Dim Stream As IUnknown
     If CreateStreamOnHGlobal(ByVal hGlobal, 0, Stream) <> S_OK Then
-        Call Err.Raise(513, "CreateStreamOnHGlobalエラー")
+        Call Err.Raise(513, , "CreateStreamOnHGlobalエラー")
     End If
     
     Dim Gdip As New CGdiplus
@@ -407,7 +407,7 @@ End Sub
 Private Sub SavePNGToClipbord()
     Dim Stream As IUnknown
     If CreateStreamOnHGlobal(0, 0, Stream) <> S_OK Then
-        Call Err.Raise(513, "CreateStreamOnHGlobalエラー")
+        Call Err.Raise(513, , "CreateStreamOnHGlobalエラー")
     End If
     
     Dim Gdip As New CGdiplus
@@ -417,13 +417,13 @@ Private Sub SavePNGToClipbord()
     Dim hGlobal As LongPtr
     Call GetHGlobalFromStream(Stream, hGlobal)
     If hGlobal = 0 Then
-        Call Err.Raise(513, "GetHGlobalFromStreamエラー")
+        Call Err.Raise(513, , "GetHGlobalFromStreamエラー")
     End If
     
     Dim CF_PNG As Long
     CF_PNG = RegisterClipboardFormat("PNG")
     If SetClipboardData(CF_PNG, hGlobal) = 0 Then
-        Call Err.Raise(513, "SetClipboardDataエラー")
+        Call Err.Raise(513, , "SetClipboardDataエラー")
     End If
 End Sub
 

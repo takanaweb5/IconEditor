@@ -155,7 +155,7 @@ Private Sub Class_Initialize()
     Dim GdiInput As GdiplusStartupInput
     GdiInput.GdiplusVersion = 1&
     If GdiplusStartup(FGdiPlus, GdiInput) <> S_OK Then
-        Call Err.Raise(513, "GdiplusStartupエラー")
+        Call Err.Raise(513, , "GdiplusStartupエラー")
     End If
 End Sub
 
@@ -194,7 +194,7 @@ End Property
 '*****************************************************************************
 Public Sub CreateFromFile(ByVal strFile As String, Optional lngWidth As Long = 0, Optional lngHeight As Long = 0)
     If GdipLoadImageFromFile(ByVal StrPtr(strFile), FGdiImage) <> S_OK Then
-        Call Err.Raise(513, "GdipLoadImageFromFileエラー")
+        Call Err.Raise(513, , "GdipLoadImageFromFileエラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
     Call Me.Resize(lngWidth, lngHeight)
@@ -207,7 +207,7 @@ End Sub
 '*****************************************************************************
 Public Sub CreateFromStream(ByVal Stream As IUnknown, Optional lngWidth As Long = 0, Optional lngHeight As Long = 0)
     If GdipLoadImageFromStream(ObjPtr(Stream), FGdiImage) <> S_OK Then
-        Call Err.Raise(513, "GdipLoadImageFromStreamエラー")
+        Call Err.Raise(513, , "GdipLoadImageFromStreamエラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
     Call Me.Resize(lngWidth, lngHeight)
@@ -226,7 +226,7 @@ Public Sub CreateFromHBITMAP(ByVal hBitmap As LongPtr, Optional lngWidth As Long
 
 '    ※アルファチャネルが反映されないため却下
 '    If GdipCreateBitmapFromHBITMAP(hBitmap, 0&, FGdiImage) <> S_OK Then
-'        Call Err.Raise(513, "GdipCreateBitmapFromHBITMAPエラー")
+'        Call Err.Raise(513,, "GdipCreateBitmapFromHBITMAPエラー")
 '    End If
 End Sub
 
@@ -271,7 +271,7 @@ End Sub
 Public Sub CreateFromPixels(ByRef Pixels() As Long)
     'GdiImageオブジェクトを作成
     If GdipCreateBitmapFromScan0(UBound(Pixels, 1), UBound(Pixels, 2), 0, PixelFormat32bppARGB, ByVal 0, FGdiImage) <> S_OK Then
-        Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
+        Call Err.Raise(513, , "GdipCreateBitmapFromScan0エラー")
     End If
     Call GdipBitmapSetResolution(FGdiImage, 96#, 96#) '標準のDPIに設定
     Call BitmapLockBits(Pixels(), ImageLockModeWrite)
@@ -323,7 +323,7 @@ Private Sub BitmapLockBits(ByRef Pixels() As Long, ByVal lngImageLockMode As Ima
     End With
     
     If GdipBitmapLockBits(FGdiImage, ByVal 0, ImageLockModeUserInputBuf Or lngImageLockMode, PixelFormat32bppARGB, BmpData) <> S_OK Then
-        Call Err.Raise(513, "GdipBitmapLockBitsエラー")
+        Call Err.Raise(513, , "GdipBitmapLockBitsエラー")
     End If
     Call GdipBitmapUnlockBits(FGdiImage, BmpData)
 End Sub
@@ -336,7 +336,7 @@ End Sub
 Public Function ToHBITMAP() As LongPtr
     Dim hBitmap As LongPtr
     If GdipCreateHBITMAPFromBitmap(FGdiImage, hBitmap, 0) <> S_OK Then
-        Call Err.Raise(513, "GdipCreateHBITMAPFromBitmapエラー")
+        Call Err.Raise(513, , "GdipCreateHBITMAPFromBitmapエラー")
     End If
     ToHBITMAP = hBitmap
 End Function
@@ -350,7 +350,7 @@ Public Sub ToPNGStream(ByRef Stream As IUnknown)
     Dim gGuid As Guid
     Call CLSIDFromString(StrPtr(CLSID_PNG), gGuid)
     If GdipSaveImageToStream(FGdiImage, ByVal ObjPtr(Stream), gGuid, 0) <> S_OK Then
-        Call Err.Raise(513, "GdipSaveImageToStreamエラー")
+        Call Err.Raise(513, , "GdipSaveImageToStreamエラー")
     End If
 End Sub
 
@@ -363,7 +363,7 @@ Public Sub SaveToPNGFile(ByVal strFile As String)
     Dim gGuid As Guid
     Call CLSIDFromString(StrPtr(CLSID_PNG), gGuid)
     If GdipSaveImageToFile(FGdiImage, ByVal StrPtr(strFile), gGuid, 0) <> S_OK Then
-        Call Err.Raise(513, "GdipSaveImageToFileエラー")
+        Call Err.Raise(513, , "GdipSaveImageToFileエラー")
     End If
 End Sub
 
@@ -384,7 +384,7 @@ On Error GoTo Finalization
     '新しいサイズのBitmapオブジェクトを作成
     Dim hNewBmp  As LongPtr
     If GdipCreateBitmapFromScan0(lngWidth, lngHeight, 0, PixelFormat32bppARGB, ByVal 0&, hNewBmp) <> S_OK Then
-        Call Err.Raise(513, "GdipCreateBitmapFromScan0エラー")
+        Call Err.Raise(513, , "GdipCreateBitmapFromScan0エラー")
     End If
  
     'サイズを変更
