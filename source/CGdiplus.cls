@@ -335,7 +335,8 @@ End Sub
 '*****************************************************************************
 Public Function ToHBITMAP() As LongPtr
     Dim hBitmap As LongPtr
-    If GdipCreateHBITMAPFromBitmap(FGdiImage, hBitmap, 0) <> S_OK Then
+    '-1ÇÕîí
+    If GdipCreateHBITMAPFromBitmap(FGdiImage, hBitmap, -1) <> S_OK Then
         Call Err.Raise(513, , "GdipCreateHBITMAPFromBitmapÉGÉâÅ[")
     End If
     ToHBITMAP = hBitmap
