@@ -620,8 +620,8 @@ Sub onAction(control As IRibbonControl)
         Application.ScreenUpdating = False
         Call Worksheets("‰‚ß‚É").Activate
         ActiveWindow.ScrollColumn = 1
-        ActiveWindow.ScrollRow = 90
-        Call Worksheets("‰‚ß‚É").Range("A90").Select
+        ActiveWindow.ScrollRow = 93
+        Call Worksheets("‰‚ß‚É").Range("A93").Select
         Application.ScreenUpdating = True
     Case 75
         Call ”’l‚©‚çF‚ğİ’è
