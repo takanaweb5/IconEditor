@@ -9,24 +9,10 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Private Type Guid
-    Data1 As Long
-    Data2 As Integer
-    Data3 As Integer
-    Data4(7) As Byte
-End Type
-
 Private Type PICTDESC_ICON
     size   As Long
     Type   As Long
     hIcon  As LongPtr
-End Type
-
-Private Type PICTDESC_BMP
-    size    As Long
-    Type    As Long
-    hBitmap As LongPtr
-    hPal    As LongPtr
 End Type
 
 Private Type ICONDIR
@@ -109,10 +95,8 @@ Private Declare PtrSafe Function GetBitmapBits Lib "gdi32" (ByVal hBitmap As Lon
 Private Declare PtrSafe Function SetBitmapBits Lib "gdi32" (ByVal hBitmap As LongPtr, ByVal dwCount As Long, lpBits As Any) As Long
 
 Private Declare PtrSafe Function IIDFromString Lib "ole32" (ByVal lpsz As LongPtr, ByRef lpiid As Any) As Long
-Private Declare PtrSafe Function OleCreatePictureIndirect Lib "oleaut32.dll" (ByRef PicDesc As Any, ByRef RefIID As Guid, ByVal fPictureOwnsHandle As Long, ByRef IPic As IPicture) As Long
 Private Declare PtrSafe Function CreateStreamOnHGlobal Lib "ole32" (ByVal hGlobal As LongPtr, ByVal fDeleteOnRelease As Long, ppstm As Any) As Long
 Private Declare PtrSafe Function GetHGlobalFromStream Lib "ole32" (ByVal Stream As IUnknown, ByRef hGlobal As LongPtr) As Long
-Private Declare PtrSafe Function CLSIDFromString Lib "ole32" (ByVal lpszCLSID As LongPtr, ByRef pclsid As Guid) As Long
 Private Declare PtrSafe Function IStream_Size Lib "shlwapi" Alias "#214" (ByVal Stream As IUnknown, ByRef pui As Currency) As Long
 
 Private Declare PtrSafe Function OpenClipboard Lib "user32" (ByVal hwnd As LongPtr) As Long
@@ -300,13 +284,8 @@ Public Sub LoadImageFromResource(ByRef objRow As Range)
          Data(x) = objRow.Cells(1, x + 1)
     Next
     
-    Dim Stream As IUnknown
-    If CreateStreamOnHGlobal(VarPtr(Data(1)), 0, Stream) <> S_OK Then
-        Call Err.Raise(513, , "CreateStreamOnHGlobalÉGÉâÅ[")
-    End If
-
     Dim Gdip As New CGdiplus
-    Call Gdip.CreateFromStream(Stream)
+    Call Gdip.CreateFromHGlobal(VarPtr(Data(1)))
     Call Me.SetSize(Gdip.Width, Gdip.Height)
     Call Gdip.ToPixels(FPixels())
     Call SetNoAlpha
@@ -637,20 +616,7 @@ End Sub
 Public Function SetToIPicture() As IPicture
     Dim Gdip As New CGdiplus
     Call Gdip.CreateFromPixels(FPixels())
-    
-    Dim uPicInfo As PICTDESC_BMP
-    With uPicInfo
-        .size = Len(uPicInfo)
-        .Type = PICTYPE_BITMAP
-        .hBitmap = Gdip.ToHBITMAP
-        .hPal = 0
-    End With
-
-    Dim gGuid As Guid
-    Call CLSIDFromString(StrPtr(IID_IPictureDisp), gGuid)
-    Dim IBitmap As IPicture
-    Call OleCreatePictureIndirect(uPicInfo, gGuid, True, IBitmap)
-    Set SetToIPicture = IBitmap
+    Set SetToIPicture = Gdip.ToIPicture
 End Function
 
 '*****************************************************************************
